@@ -38,6 +38,9 @@
 
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (!usuario) {
+    window.location.href = 'index.html'; // <-- Também deve ser index.html
+}
+    if (!usuario) {
         window.location.href = 'index.html';
     }
 
@@ -125,9 +128,9 @@
     });
 
     function logout() {
-        localStorage.clear();
-        window.location.href = 'index.html';
-    }
+    localStorage.clear();
+    window.location.href = 'index.html'; // <-- Certifique-se de que diz index.html e NÃO login.html
+}
 
     carregarFichas();
 </script>
