@@ -32,9 +32,10 @@
 </div>
 
 <script>
-    const API_URL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000' 
-        : 'https://SEU-BACKEND-NO-RENDER.onrender.com';
+// Nos ficheiros index.html e professor.html:
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : 'https://preconselhosupabase.onrender.com'; // <-- Coloque a sua URL real do Render
 
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (!usuario) {
