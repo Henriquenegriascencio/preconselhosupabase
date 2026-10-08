@@ -1,31 +1,29 @@
 const express = require('express');
-const cors = require('cors'); // <-- Adicione esta linha
+const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
 
 const app = express();
-app.use(cors()); // <-- Apenas isso libera o acesso do GitHub Pages!
+
+// Permite requisições vindas do GitHub Pages ou de qualquer outro domínio
+app.use(cors());
 app.use(express.json());
 
-// Pode colocar a URL e a KEY direto aqui para não complicar
-const supabase = createClient(
-    'https://qizdxvgyuophdwfltclr.supabase.co/rest/v1/', 
-    'sb_publishable_yuPsroBYbFDRLXbZ7unxyw_fqarLtvK'
-);
+// --- COLE AQUI AS SUAS CREDENCIAIS DO SUPABASE ---
+const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co'; 
+const SUPABASE_KEY = 'SUA-CHAVE-ANON-PUBLIC-AQUI';
 
-// Conexão com o Supabase usando variáveis de ambiente
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Servir arquivos estáticos (HTML, CSS, JS)
+// Servir arquivos estáticos (caso rode localmente)
 app.use(express.static(__dirname));
 
-// Rota principal
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/login.html');
 });
 
-// --- AUTENTICAÇÃO ---
+// ==========================================
+// AUTENTICAÇÃO (CADASTRO E LOGIN)
+// ==========================================
 
 app.post('/api/auth/cadastro', async (req, res) => {
     const { nome, email, senha, tipo } = req.body;
@@ -65,7 +63,9 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// --- ROTAS DO ADMINISTRADOR ---
+// ==========================================
+// ROTAS DO ADMINISTRADOR
+// ==========================================
 
 app.post('/api/admin/fichas', async (req, res) => {
     const { titulo, turma_id, materia_id, data_limite, perguntas } = req.body;
@@ -103,7 +103,6 @@ app.post('/api/admin/fichas', async (req, res) => {
 
 app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
     try {
-        // Consulta unindo as tabelas relacionadas
         const { data: respostas, error } = await supabase
             .from('respostas_pre_conselho')
             .select(`
@@ -125,7 +124,6 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
 
         if (error) throw error;
 
-        // Formatação dos dados para o front-end
         const resultadoFormatado = respostas.map(r => ({
             id: r.id,
             texto_pergunta: r.perguntas?.texto_pergunta,
@@ -143,7 +141,9 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
     }
 });
 
-// --- ROTAS DO PROFESSOR ---
+// ==========================================
+// ROTAS DO PROFESSOR
+// ==========================================
 
 app.get('/api/professor/fichas', async (req, res) => {
     try {
@@ -201,7 +201,7 @@ app.post('/api/professor/respostas', async (req, res) => {
     }
 });
 
-// Porta dinâmica (essencial para servidores online como Render/Railway)
+// Conexão com porta dinâmica
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
