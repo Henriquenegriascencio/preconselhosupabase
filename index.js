@@ -182,6 +182,46 @@ app.get('/api/admin/turmas', async (req, res) => {
 });
 
 // ==========================================
+// ROTAS DE MATÉRIAS
+// ==========================================
+
+// Cadastrar nova matéria
+app.post('/api/admin/materias', async (req, res) => {
+    const { nome } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('materias')
+            .insert([{ nome }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(201).json({ message: 'Matéria cadastrada com sucesso!', materia: data });
+    } catch (err) {
+        console.error('Erro ao cadastrar matéria:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Listar todas as matérias
+app.get('/api/admin/materias', async (req, res) => {
+    try {
+        const { data: materias, error } = await supabase
+            .from('materias')
+            .select('*')
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+
+        res.json(materias);
+    } catch (err) {
+        console.error('Erro ao buscar matérias:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
 // ROTAS DO PROFESSOR
 // ==========================================
 
