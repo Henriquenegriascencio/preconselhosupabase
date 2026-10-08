@@ -142,6 +142,46 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
 });
 
 // ==========================================
+// ROTAS DE TURMAS
+// ==========================================
+
+// Cadastrar nova turma
+app.post('/api/admin/turmas', async (req, res) => {
+    const { nome } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('turmas')
+            .insert([{ nome }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(201).json({ message: 'Turma cadastrada com sucesso!', turma: data });
+    } catch (err) {
+        console.error('Erro ao cadastrar turma:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Listar todas as turmas
+app.get('/api/admin/turmas', async (req, res) => {
+    try {
+        const { data: turmas, error } = await supabase
+            .from('turmas')
+            .select('*')
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+
+        res.json(turmas);
+    } catch (err) {
+        console.error('Erro ao buscar turmas:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
 // ROTAS DO PROFESSOR
 // ==========================================
 

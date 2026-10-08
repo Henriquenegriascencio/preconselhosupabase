@@ -7,13 +7,14 @@
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; }
         .container { max-width: 700px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1, h2 { color: #1e293b; }
+        h1, h2, h3 { color: #1e293b; }
         label { display: block; margin-top: 10px; font-weight: bold; }
         input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
         .pergunta-box { border: 1px solid #e2e8f0; padding: 10px; margin-top: 10px; border-radius: 4px; background: #f1f5f9; }
         button { background: #2563eb; color: white; border: none; padding: 10px 15px; margin-top: 15px; border-radius: 4px; cursor: pointer; }
         .btn-add { background: #10b981; }
         .btn-logout { background: #ef4444; float: right; }
+        .card-secao { border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin-bottom: 25px; background: #fafafa; }
     </style>
 </head>
 <body>
@@ -22,36 +23,101 @@
     <button class="btn-logout" onclick="logout()">Sair</button>
     <h1>Painel do Administrador</h1>
     
-    <h2>Criar Nova Ficha de Avaliação</h2>
-    <form id="formFicha">
-        <label>Título da Ficha:</label>
-        <input type="text" id="titulo" required placeholder="Ex: Pré-Conselho 1º Trimestre">
+    <!-- SEÇÃO 1: CADASTRO DE TURMAS -->
+    <div class="card-secao">
+        <h2>1. Cadastrar Nova Turma</h2>
+        <form id="formTurma">
+            <label>Nome da Turma:</label>
+            <input type="text" id="nomeTurma" required placeholder="Ex: 1º Ano A, 2º Ano B, 301...">
+            <button type="submit" class="btn-add">Cadastrar Turma</button>
+        </form>
+    </div>
 
-        <label>ID da Turma:</label>
-        <input type="number" id="turmaId" required placeholder="Ex: 101">
+    <!-- SEÇÃO 2: CRIAÇÃO DE FICHAS -->
+    <div class="card-secao">
+        <h2>2. Criar Nova Ficha de Avaliação</h2>
+        <form id="formFicha">
+            <label>Título da Ficha:</label>
+            <input type="text" id="titulo" required placeholder="Ex: Pré-Conselho 1º Trimestre">
 
-        <label>ID da Matéria:</label>
-        <input type="number" id="materiaId" required placeholder="Ex: 1">
+            <label>Selecione a Turma:</label>
+            <select id="turmaId" required>
+                <option value="">-- Carregando turmas... --</option>
+            </select>
 
-        <label>Data Limite:</label>
-        <input type="date" id="dataLimite">
+            <label>ID da Matéria:</label>
+            <input type="number" id="materiaId" required placeholder="Ex: 1">
 
-        <h3>Perguntas</h3>
-        <div id="containerPerguntas"></div>
-        <button type="button" class="btn-add" onclick="adicionarPergunta()">+ Adicionar Pergunta</button>
+            <label>Data Limite:</label>
+            <input type="date" id="dataLimite">
 
-        <br><br>
-        <button type="submit">Salvar e Enviar Ficha</button>
-    </form>
+            <h3>Perguntas</h3>
+            <div id="containerPerguntas"></div>
+            <button type="button" class="btn-add" onclick="adicionarPergunta()">+ Adicionar Pergunta</button>
+
+            <br><br>
+            <button type="submit">Salvar e Enviar Ficha</button>
+        </form>
+    </div>
 </div>
 
 <script>
-// Nos ficheiros index.html e professor.html:
-const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000' 
-    : 'https://preconselhosupabase.onrender.com'; // <-- Coloque a sua URL real do Render
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000' 
+        : 'https://preconselhosupabase.onrender.com';
 
     let contadorPerguntas = 0;
+
+    // Carrega as turmas cadastradas no elemento <select>
+    async function carregarTurmas() {
+        try {
+            const res = await fetch(`${API_URL}/api/admin/turmas`);
+            const turmas = await res.json();
+
+            const select = document.getElementById('turmaId');
+            select.innerHTML = '<option value="">-- Selecione uma Turma --</option>';
+
+            if (turmas.length === 0) {
+                select.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
+                return;
+            }
+
+            turmas.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = `${t.nome} (ID: ${t.id})`;
+                select.appendChild(opt);
+            });
+        } catch (err) {
+            console.error('Erro ao carregar turmas:', err);
+            document.getElementById('turmaId').innerHTML = '<option value="">Erro ao carregar turmas</option>';
+        }
+    }
+
+    // Formulário de Cadastro de Turma
+    document.getElementById('formTurma').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nome = document.getElementById('nomeTurma').value;
+
+        try {
+            const response = await fetch(`${API_URL}/api/admin/turmas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert(`Turma "${nome}" cadastrada com sucesso!`);
+                document.getElementById('nomeTurma').value = '';
+                carregarTurmas(); // Atualiza a lista no <select> imediatamente
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        } catch (err) {
+            alert('Erro ao conectar ao servidor.');
+        }
+    });
 
     function adicionarPergunta() {
         contadorPerguntas++;
@@ -67,9 +133,7 @@ const API_URL = window.location.hostname === 'localhost'
         document.getElementById('containerPerguntas').appendChild(div);
     }
 
-    // Adiciona ao menos uma pergunta inicial
-    adicionarPergunta();
-
+    // Formulário de Criação de Ficha
     document.getElementById('formFicha').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -77,6 +141,11 @@ const API_URL = window.location.hostname === 'localhost'
         const turma_id = parseInt(document.getElementById('turmaId').value);
         const materia_id = parseInt(document.getElementById('materiaId').value);
         const data_limite = document.getElementById('dataLimite').value;
+
+        if (!turma_id) {
+            alert('Por favor, selecione uma turma.');
+            return;
+        }
 
         const perguntasBoxes = document.querySelectorAll('.pergunta-box');
         const perguntas = Array.from(perguntasBoxes).map(box => ({
@@ -107,6 +176,10 @@ const API_URL = window.location.hostname === 'localhost'
         localStorage.clear();
         window.location.href = 'login.html';
     }
+
+    // Inicialização
+    adicionarPergunta();
+    carregarTurmas();
 </script>
 
 </body>
