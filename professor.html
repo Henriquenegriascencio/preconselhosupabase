@@ -32,14 +32,13 @@
 </div>
 
 <script>
-// Nos ficheiros index.html e professor.html:
-const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000' 
-    : 'https://preconselhosupabase.onrender.com'; // <-- Coloque a sua URL real do Render
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000' 
+        : 'https://preconselhosupabase.onrender.com';
 
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (!usuario) {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 
     async function carregarFichas() {
@@ -127,7 +126,7 @@ const API_URL = window.location.hostname === 'localhost'
 
     function logout() {
         localStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 
     carregarFichas();

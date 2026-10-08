@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Administrador</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; }
+        .container { max-width: 700px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #1e293b; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        .pergunta-box { border: 1px solid #e2e8f0; padding: 10px; margin-top: 10px; border-radius: 4px; background: #f1f5f9; }
+        button { background: #2563eb; color: white; border: none; padding: 10px 15px; margin-top: 15px; border-radius: 4px; cursor: pointer; }
+        .btn-add { background: #10b981; }
+        .btn-logout { background: #ef4444; float: right; }
+        .card-secao { border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin-bottom: 25px; background: #fafafa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button class="btn-logout" onclick="logout()">Sair</button>
+    <h1>Painel do Administrador</h1>
+    
+    <!-- SEÇÃO 1: CADASTRO DE TURMAS -->
+    <div class="card-secao">
+        <h2>1. Cadastrar Nova Turma</h2>
+        <form id="formTurma">
+            <label>Nome da Turma:</label>
+            <input type="text" id="nomeTurma" required placeholder="Ex: 1º Ano A, 2º Ano B, 301...">
+            <button type="submit" class="btn-add">Cadastrar Turma</button>
+        </form>
+    </div>
+
+    <!-- SEÇÃO 2: CADASTRO DE MATÉRIAS -->
+    <div class="card-secao">
+        <h2>2. Cadastrar Nova Matéria</h2>
+        <form id="formMateria">
+            <label>Nome da Matéria:</label>
+            <input type="text" id="nomeMateria" required placeholder="Ex: Matemática, Português, História...">
+            <button type="submit" class="btn-add">Cadastrar Matéria</button>
+        </form>
+    </div>
+
+    <!-- SEÇÃO 3: CRIAÇÃO DE FICHAS -->
+    <div class="card-secao">
+        <h2>3. Criar Nova Ficha de Avaliação</h2>
+        <form id="formFicha">
+            <label>Título da Ficha:</label>
+            <input type="text" id="titulo" required placeholder="Ex: Pré-Conselho 1º Trimestre">
+
+            <label>Selecione a Turma:</label>
+            <select id="turmaId" required>
+                <option value="">-- Carregando turmas... --</option>
+            </select>
+
+            <label>Selecione a Matéria:</label>
+            <select id="materiaId" required>
+                <option value="">-- Carregando matérias... --</option>
+            </select>
+
+            <label>Data Limite:</label>
+            <input type="date" id="dataLimite">
+
+            <h3>Perguntas</h3>
+            <div id="containerPerguntas"></div>
+            <button type="button" class="btn-add" onclick="adicionarPergunta()">+ Adicionar Pergunta</button>
+
+            <br><br>
+            <button type="submit">Salvar e Enviar Ficha</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000' 
+        : 'https://preconselhosupabase.onrender.com';
+
+    let contadorPerguntas = 0;
+
+    async function carregarTurmas() {
+        try {
+            const res = await fetch(`${API_URL}/api/admin/turmas`);
+            const turmas = await res.json();
+
+            const select = document.getElementById('turmaId');
+            select.innerHTML = '<option value="">-- Selecione uma Turma --</option>';
+
+            if (turmas.length === 0) {
+                select.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
+                return;
+            }
+
+            turmas.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = `${t.nome} (ID: ${t.id})`;
+                select.appendChild(opt);
+            });
+        } catch (err) {
+            console.error('Erro ao carregar turmas:', err);
+            document.getElementById('turmaId').innerHTML = '<option value="">Erro ao carregar turmas</option>';
+        }
+    }
+
+    async function carregarMaterias() {
+        try {
+            const res = await fetch(`${API_URL}/api/admin/materias`);
+            const materias = await res.json();
+
+            const select = document.getElementById('materiaId');
+            select.innerHTML = '<option value="">-- Selecione uma Matéria --</option>';
+
+            if (materias.length === 0) {
+                select.innerHTML = '<option value="">Nenhuma matéria cadastrada</option>';
+                return;
+            }
+
+            materias.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = `${m.nome} (ID: ${m.id})`;
+                select.appendChild(opt);
+            });
+        } catch (err) {
+            console.error('Erro ao carregar matérias:', err);
+            document.getElementById('materiaId').innerHTML = '<option value="">Erro ao carregar matérias</option>';
+        }
+    }
+
+    document.getElementById('formTurma').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nome = document.getElementById('nomeTurma').value;
+
+        try {
+            const response = await fetch(`${API_URL}/api/admin/turmas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert(`Turma "${nome}" cadastrada com sucesso!`);
+                document.getElementById('nomeTurma').value = '';
+                carregarTurmas();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        } catch (err) {
+            alert('Erro ao conectar ao servidor.');
+        }
+    });
+
+    document.getElementById('formMateria').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nome = document.getElementById('nomeMateria').value;
+
+        try {
+            const response = await fetch(`${API_URL}/api/admin/materias`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert(`Matéria "${nome}" cadastrada com sucesso!`);
+                document.getElementById('nomeMateria').value = '';
+                carregarMaterias();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        } catch (err) {
+            alert('Erro ao conectar ao servidor.');
+        }
+    });
+
+    function adicionarPergunta() {
+        contadorPerguntas++;
+        const div = document.createElement('div');
+        div.className = 'pergunta-box';
+        div.id = `pergunta_${contadorPerguntas}`;
+        div.innerHTML = `
+            <label>Pergunta ${contadorPerguntas}:</label>
+            <input type="text" class="texto-pergunta" required placeholder="Ex: A turma demonstra engajamento?">
+            <label>Categoria:</label>
+            <input type="text" class="categoria-pergunta" placeholder="Geral / Comportamento / Desempenho">
+        `;
+        document.getElementById('containerPerguntas').appendChild(div);
+    }
+
+    document.getElementById('formFicha').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const titulo = document.getElementById('titulo').value;
+        const turma_id = parseInt(document.getElementById('turmaId').value);
+        const materia_id = parseInt(document.getElementById('materiaId').value);
+        const data_limite = document.getElementById('dataLimite').value;
+
+        if (!turma_id || !materia_id) {
+            alert('Por favor, selecione uma turma e uma matéria.');
+            return;
+        }
+
+        const perguntasBoxes = document.querySelectorAll('.pergunta-box');
+        const perguntas = Array.from(perguntasBoxes).map(box => ({
+            texto_pergunta: box.querySelector('.texto-pergunta').value,
+            categoria: box.querySelector('.categoria-pergunta').value || 'Geral'
+        }));
+
+        try {
+            const response = await fetch(`${API_URL}/api/admin/fichas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, turma_id, materia_id, data_limite, perguntas })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert('Ficha criada com sucesso!');
+                window.location.reload();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        } catch (err) {
+            alert('Erro ao conectar ao servidor.');
+        }
+    });
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'index.html';
+    }
+
+    adicionarPergunta();
+    carregarTurmas();
+    carregarMaterias();
+</script>
+
+</body>
+</html>

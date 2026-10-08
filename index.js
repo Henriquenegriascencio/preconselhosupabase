@@ -4,21 +4,20 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// Permite requisições vindas do GitHub Pages ou de qualquer outro domínio
 app.use(cors());
 app.use(express.json());
 
 // --- COLE AQUI AS SUAS CREDENCIAIS DO SUPABASE ---
-const SUPABASE_URL = 'https://qizdxvgyuophdwfltclr.supabase.co'; 
-const SUPABASE_KEY = 'sb_publishable_yuPsroBYbFDRLXbZ7unxyw_fqarLtvK';
+const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co'; 
+const SUPABASE_KEY = 'SUA-CHAVE-ANON-PUBLIC-AQUI';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Servir arquivos estáticos (caso rode localmente)
 app.use(express.static(__dirname));
 
+// A rota raiz agora serve a página de login (index.html)
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/login.html');
+    res.sendFile(__dirname + '/index.html');
 });
 
 // ==========================================
@@ -66,6 +65,74 @@ app.post('/api/auth/login', async (req, res) => {
 // ==========================================
 // ROTAS DO ADMINISTRADOR
 // ==========================================
+
+app.post('/api/admin/turmas', async (req, res) => {
+    const { nome } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('turmas')
+            .insert([{ nome }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(201).json({ message: 'Turma cadastrada com sucesso!', turma: data });
+    } catch (err) {
+        console.error('Erro ao cadastrar turma:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/admin/turmas', async (req, res) => {
+    try {
+        const { data: turmas, error } = await supabase
+            .from('turmas')
+            .select('*')
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+
+        res.json(turmas);
+    } catch (err) {
+        console.error('Erro ao buscar turmas:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/materias', async (req, res) => {
+    const { nome } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('materias')
+            .insert([{ nome }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.status(201).json({ message: 'Matéria cadastrada com sucesso!', materia: data });
+    } catch (err) {
+        console.error('Erro ao cadastrar matéria:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/admin/materias', async (req, res) => {
+    try {
+        const { data: materias, error } = await supabase
+            .from('materias')
+            .select('*')
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+
+        res.json(materias);
+    } catch (err) {
+        console.error('Erro ao buscar matérias:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.post('/api/admin/fichas', async (req, res) => {
     const { titulo, turma_id, materia_id, data_limite, perguntas } = req.body;
@@ -142,86 +209,6 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
 });
 
 // ==========================================
-// ROTAS DE TURMAS
-// ==========================================
-
-// Cadastrar nova turma
-app.post('/api/admin/turmas', async (req, res) => {
-    const { nome } = req.body;
-    try {
-        const { data, error } = await supabase
-            .from('turmas')
-            .insert([{ nome }])
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        res.status(201).json({ message: 'Turma cadastrada com sucesso!', turma: data });
-    } catch (err) {
-        console.error('Erro ao cadastrar turma:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Listar todas as turmas
-app.get('/api/admin/turmas', async (req, res) => {
-    try {
-        const { data: turmas, error } = await supabase
-            .from('turmas')
-            .select('*')
-            .order('nome', { ascending: true });
-
-        if (error) throw error;
-
-        res.json(turmas);
-    } catch (err) {
-        console.error('Erro ao buscar turmas:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ==========================================
-// ROTAS DE MATÉRIAS
-// ==========================================
-
-// Cadastrar nova matéria
-app.post('/api/admin/materias', async (req, res) => {
-    const { nome } = req.body;
-    try {
-        const { data, error } = await supabase
-            .from('materias')
-            .insert([{ nome }])
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        res.status(201).json({ message: 'Matéria cadastrada com sucesso!', materia: data });
-    } catch (err) {
-        console.error('Erro ao cadastrar matéria:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Listar todas as matérias
-app.get('/api/admin/materias', async (req, res) => {
-    try {
-        const { data: materias, error } = await supabase
-            .from('materias')
-            .select('*')
-            .order('nome', { ascending: true });
-
-        if (error) throw error;
-
-        res.json(materias);
-    } catch (err) {
-        console.error('Erro ao buscar matérias:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ==========================================
 // ROTAS DO PROFESSOR
 // ==========================================
 
@@ -281,7 +268,6 @@ app.post('/api/professor/respostas', async (req, res) => {
     }
 });
 
-// Conexão com porta dinâmica
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
