@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel do Professor - Pré-Conselho</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Proteção de Acesso & Logout -->
+    <script>
+        const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
+
+        if (!usuarioLogado || usuarioLogado.tipo !== 'professor') {
+            alert('Acesso negado! Faça login como professor.');
+            window.location.href = '/login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('usuario');
+            window.location.href = '/login.html';
+        }
+    </script>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
+
+    <div style="max-width: 900px; margin: 0 auto;">
+        <!-- Cabeçalho -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h1 style="margin: 0; color: #1e293b;">Área do Professor</h1>
+                <p style="margin: 5px 0 0 0; color: #64748b;">Bem-vindo(a), <strong id="nome-prof"></strong>!</p>
+            </div>
+            <button onclick="logout()" style="background-color: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                Sair da Conta
+            </button>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 25px;">
+
+        <!-- VISTA 1: Lista de Cartões de Fichas -->
+        <div id="sec-fichas">
+            <h2 style="color: #334155;">Fichas de Avaliação Pendentes</h2>
+            <div id="container-fichas" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
+                <!-- Os cartões serão inseridos aqui dinamicamente pelo JavaScript -->
+            </div>
+        </div>
+
+        <!-- VISTA 2: Formulário Dinâmico de Perguntas (Oculto por Padrão) -->
+        <div id="sec-formulario" style="display: none; background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <button onclick="voltarParaLista()" style="background-color: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom: 15px;">
+                ← Voltar às Fichas
+            </button>
+            <h2 id="titulo-ficha" style="color: #0f172a; margin-top: 0;"></h2>
+            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-bottom: 20px;">
+
+            <form id="form-dinamico">
+                <div id="container-perguntas">
+                    <!-- As perguntas geradas pelo Admin aparecerão aqui -->
+                </div>
+                <br>
+                <button type="submit" style="background-color: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold;">
+                    Enviar Respostas
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Exibe o nome do professor no topo
+        document.getElementById('nome-prof').innerText = usuarioLogado.nome;
+
+        let currentFichaId = null;
+
+        // 1. Busca e desenha as fichas cadastradas como Cartões (Caixas)
+        async function carregarFichas() {
+            try {
+                const res = await fetch('/api/professor/fichas');
+                const fichas = await res.json();
+                const container = document.getElementById('container-fichas');
+                container.innerHTML = '';
+
+                if (fichas.length === 0) {
+                    container.innerHTML = '<p style="color: #64748b;">Nenhuma ficha disponível no momento.</p>';
+                    return;
+                }
+
+                fichas.forEach(ficha => {
+                    const card = document.createElement('div');
+                    card.style = "border: 1px solid #cbd5e1; padding: 20px; border-radius: 8px; width: 260px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;";
+                    
+                    let dataFormatada = ficha.data_limite ? new Date(ficha.data_limite).toLocaleDateString('pt-BR') : 'Sem data';
+
+                    card.innerHTML = `
+                        <div>
+                            <h3 style="margin: 0 0 10px 0; color: #1e293b;">${ficha.titulo}</h3>
+                            <p style="margin: 0 0 15px 0; color: #64748b; font-size: 0.9em;"><strong>Prazo:</strong> ${dataFormatada}</p>
+                        </div>
+                        <button onclick="abrirFicha(${ficha.id}, '${ficha.titulo}')" style="width: 100%; padding: 8px; background-color: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                            Preencher Ficha
+                        </button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error('Erro ao carregar fichas:', err);
+            }
+        }
+
+        // 2. Abre a ficha e busca as perguntas cadastradas pelo Administrador
+        async function abrirFicha(fichaId, titulo) {
+            currentFichaId = fichaId;
+            document.getElementById('sec-fichas').style.display = 'none';
+            document.getElementById('sec-formulario').style.display = 'block';
+            document.getElementById('titulo-ficha').innerText = titulo;
+
+            try {
+                const res = await fetch(`/api/fichas/${fichaId}/perguntas`);
+                const perguntas = await res.json();
+                const container = document.getElementById('container-perguntas');
+                container.innerHTML = '';
+
+                if (perguntas.length === 0) {
+                    container.innerHTML = '<p style="color: #64748b;">Esta ficha não possui perguntas cadastradas pelo administrador.</p>';
+                    return;
+                }
+
+                perguntas.forEach((p, index) => {
+                    container.innerHTML += `
+                        <div class="pergunta-item" data-pergunta-id="${p.id}" style="margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            <label style="display:block; font-weight: bold; color: #334155; margin-bottom: 8px;">
+                                ${index + 1}. ${p.texto_pergunta}
+                            </label>
+                            
+                            <label style="font-size: 0.85em; color: #64748b; display: block; margin-bottom: 4px;">Sua Resposta:</label>
+                            <textarea class="input-resposta" required style="width: 100%; height: 60px; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1; box-sizing: border-box;"></textarea>
+                            
+                            <label style="font-size: 0.85em; color: #64748b; display: block; margin-bottom: 4px;">Observações (opcional):</label>
+                            <input type="text" class="input-anotacoes" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1; box-sizing: border-box;" placeholder="Observações adicionais...">
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error('Erro ao carregar perguntas:', err);
+                alert('Erro ao carregar as perguntas da ficha.');
+            }
+        }
+
+        // 3. Voltar para a visualização das caixas
+        function voltarParaLista() {
+            document.getElementById('sec-formulario').style.display = 'none';
+            document.getElementById('sec-fichas').style.display = 'block';
+            currentFichaId = null;
+        }
+
+        // 4. Submeter todas as respostas coletadas de uma vez
+        document.getElementById('form-dinamico').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const perguntaElements = document.querySelectorAll('.pergunta-item');
+            const respostas = [];
+
+            perguntaElements.forEach(elem => {
+                const pergunta_id = parseInt(elem.getAttribute('data-pergunta-id'));
+                const resposta = elem.querySelector('.input-resposta').value;
+                const anotacoes = elem.querySelector('.input-anotacoes').value;
+
+                respostas.push({
+                    pergunta_id,
+                    resposta,
+                    anotacoes
+                });
+            });
+
+            const payload = {
+                ficha_id: currentFichaId,
+                professor_id: usuarioLogado.id,
+                respostas
+            };
+
+            try {
+                const res = await fetch('/api/professor/respostas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert(data.message || 'Respostas enviadas com sucesso!');
+                    voltarParaLista();
+                    carregarFichas();
+                } else {
+                    alert(data.error || 'Erro ao enviar respostas.');
+                }
+            } catch (err) {
+                console.error('Erro na requisição:', err);
+                alert('Erro ao conectar ao servidor.');
+            }
+        });
+
+        // Inicializa buscando as fichas assim que entra na tela
+        carregarFichas();
+    </script>
+</body>
+</html>

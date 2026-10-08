@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel do Administrador - Pré-Conselho</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Proteção de Acesso & Logout -->
+    <script>
+        const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
+
+        if (!usuarioLogado || usuarioLogado.tipo !== 'admin') {
+            alert('Acesso negado! Faça login como administrador.');
+            window.location.href = '/login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('usuario');
+            window.location.href = '/login.html';
+        }
+    </script>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
+
+    <div style="max-width: 900px; margin: 0 auto;">
+        
+        <!-- Cabeçalho -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 style="color: #1e293b; margin: 0;">Painel do Administrador</h1>
+            <button onclick="logout()" style="background-color: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                Sair da Conta
+            </button>
+        </div>
+
+        <!-- Menu de Abas -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button id="btn-aba-criar" onclick="mudarAba('criar')" style="padding: 10px 20px; background-color: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                ➕ Criar Nova Ficha
+            </button>
+            <button id="btn-aba-respostas" onclick="mudarAba('respostas')" style="padding: 10px 20px; background-color: #e2e8f0; color: #334155; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                📊 Ver Respostas dos Professores
+            </button>
+        </div>
+
+        <!-- ABA 1: CRIAR FICHA -->
+        <div id="aba-criar" style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <h3 style="color: #334155; margin-top: 0;">1. Informações Gerais da Ficha</h3>
+            <form id="formFicha">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="font-size: 0.9em; font-weight: bold;">Título da Ficha:</label>
+                        <input type="text" id="titulo" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;" placeholder="Ex: Pré-Conselho 1º Trimestre">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.9em; font-weight: bold;">Data Limite:</label>
+                        <input type="date" id="data_limite" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.9em; font-weight: bold;">ID da Turma:</label>
+                        <input type="number" id="turma_id" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.9em; font-weight: bold;">ID da Matéria:</label>
+                        <input type="number" id="materia_id" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;">
+
+                <h3 style="color: #334155;">2. Categorias e Perguntas</h3>
+                <div id="container-perguntas"></div>
+
+                <button type="button" onclick="adicionarPergunta()" style="background-color: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 20px;">
+                    + Adicionar Pergunta
+                </button>
+
+                <br><br>
+                <button type="submit" style="background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold; width: 100%;">
+                    Criar e Publicar Ficha
+                </button>
+            </form>
+        </div>
+
+        <!-- ABA 2: VER RESPOSTAS -->
+        <div id="aba-respostas" style="display: none; background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <h3 style="color: #334155; margin-top: 0;">Selecione uma Ficha para Visualizar as Respostas</h3>
+            
+            <div id="lista-fichas-admin" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;"></div>
+
+            <div id="detalhes-respostas" style="display: none;">
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 20px;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div>
+                        <h3 id="titulo-ficha-selecionada" style="color: #0f172a; margin: 0;"></h3>
+                        <span id="badge-turma" style="display: inline-block; margin-top: 5px; background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em;"></span>
+                    </div>
+
+                    <!-- Filtro por Professor -->
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9em; color: #475569;">Filtrar por Professor:</label>
+                        <select id="filtro-professor" onchange="aplicarFiltroProfessor()" style="padding: 6px 12px; border-radius: 4px; border: 1px solid #cbd5e1; margin-left: 8px;">
+                            <option value="todos">Todos os Professores</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; text-align: left;">
+                            <th style="padding: 10px; border: 1px solid #cbd5e1;">Professor</th>
+                            <th style="padding: 10px; border: 1px solid #cbd5e1;">Categoria / Pergunta</th>
+                            <th style="padding: 10px; border: 1px solid #cbd5e1;">Resposta</th>
+                            <th style="padding: 10px; border: 1px solid #cbd5e1;">Observações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-corpo-respostas"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let todasRespostasFicha = [];
+
+        // --- NAVEGAÇÃO DE ABAS ---
+        function mudarAba(aba) {
+            const containerCriar = document.getElementById('aba-criar');
+            const containerRespostas = document.getElementById('aba-respostas');
+            const btnCriar = document.getElementById('btn-aba-criar');
+            const btnRespostas = document.getElementById('btn-aba-respostas');
+
+            if (aba === 'criar') {
+                containerCriar.style.display = 'block';
+                containerRespostas.style.display = 'none';
+                btnCriar.style.backgroundColor = '#2563eb';
+                btnCriar.style.color = 'white';
+                btnRespostas.style.backgroundColor = '#e2e8f0';
+                btnRespostas.style.color = '#334155';
+            } else {
+                containerCriar.style.display = 'none';
+                containerRespostas.style.display = 'block';
+                btnRespostas.style.backgroundColor = '#2563eb';
+                btnRespostas.style.color = 'white';
+                btnCriar.style.backgroundColor = '#e2e8f0';
+                btnCriar.style.color = '#334155';
+                carregarFichasAdmin();
+            }
+        }
+
+        // --- LÓGICA DE CRIAR PERGUNTAS ---
+        function adicionarPergunta() {
+            const container = document.getElementById('container-perguntas');
+            const index = container.children.length + 1;
+
+            const item = document.createElement('div');
+            item.className = 'item-pergunta';
+            item.style = 'background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; margin-bottom: 15px;';
+            
+            item.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <strong style="color: #1e293b;" class="titulo-numero-pergunta">Pergunta #${index}</strong>
+                    <button type="button" onclick="this.closest('.item-pergunta').remove()" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">Remover</button>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 0.85em; color: #475569; font-weight: bold;">Categoria:</label>
+                    <input type="text" class="input-categoria" required placeholder="Ex: Desempenho, Comportamento..." style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="font-size: 0.85em; color: #475569; font-weight: bold;">Pergunta:</label>
+                    <input type="text" class="input-texto-pergunta" required placeholder="Ex: Como é a participação nas aulas?" style="width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;">
+                </div>
+            `;
+            container.appendChild(item);
+        }
+
+        adicionarPergunta(); // Pergunta inicial
+
+        document.getElementById('formFicha').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const items = document.querySelectorAll('.item-pergunta');
+            const perguntas = Array.from(items).map(item => ({
+                categoria: item.querySelector('.input-categoria').value,
+                texto_pergunta: item.querySelector('.input-texto-pergunta').value
+            }));
+
+            const payload = {
+                titulo: document.getElementById('titulo').value,
+                turma_id: parseInt(document.getElementById('turma_id').value),
+                materia_id: parseInt(document.getElementById('materia_id').value),
+                data_limite: document.getElementById('data_limite').value,
+                perguntas
+            };
+
+            const res = await fetch('/api/admin/fichas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert('Ficha criada com sucesso!');
+                document.getElementById('formFicha').reset();
+                document.getElementById('container-perguntas').innerHTML = '';
+                adicionarPergunta();
+            } else {
+                alert('Erro ao criar ficha.');
+            }
+        });
+
+        // --- LÓGICA DE VISUALIZAR RESPOSTAS ---
+        async function carregarFichasAdmin() {
+            const res = await fetch('/api/professor/fichas');
+            const fichas = await res.json();
+            const container = document.getElementById('lista-fichas-admin');
+            container.innerHTML = '';
+
+            fichas.forEach(f => {
+                const btn = document.createElement('button');
+                btn.style = "padding: 12px; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 6px; cursor: pointer; text-align: left; font-weight: bold;";
+                btn.innerHTML = `📋 ${f.titulo}`;
+                btn.onclick = () => verRespostasFicha(f.id, f.titulo);
+                container.appendChild(btn);
+            });
+        }
+
+        async function verRespostasFicha(fichaId, titulo) {
+            document.getElementById('detalhes-respostas').style.display = 'block';
+            document.getElementById('titulo-ficha-selecionada').innerText = `Ficha: ${titulo}`;
+            
+            const res = await fetch(`/api/admin/fichas/${fichaId}/respostas`);
+            todasRespostasFicha = await res.json();
+
+            if (todasRespostasFicha.length > 0) {
+                document.getElementById('badge-turma').innerText = `Turma ID: ${todasRespostasFicha[0].turma_id}`;
+            } else {
+                document.getElementById('badge-turma').innerText = 'Sem respostas enviadas';
+            }
+
+            // Preenche opções do filtro sem nomes repetidos
+            const selectProf = document.getElementById('filtro-professor');
+            selectProf.innerHTML = '<option value="todos">Todos os Professores</option>';
+            
+            const professoresUnicos = [...new Set(todasRespostasFicha.map(r => r.professor_nome))];
+            professoresUnicos.forEach(prof => {
+                selectProf.innerHTML += `<option value="${prof}">${prof}</option>`;
+            });
+
+            renderizarTabela(todasRespostasFicha);
+        }
+
+        function aplicarFiltroProfessor() {
+            const profSelecionado = document.getElementById('filtro-professor').value;
+            
+            if (profSelecionado === 'todos') {
+                renderizarTabela(todasRespostasFicha);
+            } else {
+                const filtradas = todasRespostasFicha.filter(r => r.professor_nome === profSelecionado);
+                renderizarTabela(filtradas);
+            }
+        }
+
+        function renderizarTabela(respostas) {
+            const tbody = document.getElementById('tabela-corpo-respostas');
+            tbody.innerHTML = '';
+
+            if (respostas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="padding: 15px; text-align: center; color: #64748b;">Nenhuma resposta encontrada.</td></tr>`;
+                return;
+            }
+
+            respostas.forEach(r => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: bold; color: #1e293b;">${r.professor_nome}</td>
+                        <td style="padding: 10px; border: 1px solid #cbd5e1;">
+                            <span style="font-size: 0.8em; background: #e2e8f0; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${r.categoria}</span><br>
+                            ${r.texto_pergunta}
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #cbd5e1;">${r.resposta}</td>
+                        <td style="padding: 10px; border: 1px solid #cbd5e1; color: #64748b;">${r.anotacoes || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

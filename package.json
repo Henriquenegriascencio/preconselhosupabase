@@ -1,0 +1,13 @@
+{
+  "name": "pre-conselho",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.109.0",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1"
+  }
+}

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Acesso - Pré-Conselho</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div style="max-width: 400px; margin: 40px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
+        <h2>Entrar no Sistema</h2>
+        <form id="formLogin">
+            <div>
+                <label>E-mail:</label><br>
+                <input type="email" id="loginEmail" required style="width: 100%; margin-bottom: 10px;">
+            </div>
+            <div>
+                <label>Senha:</label><br>
+                <input type="password" id="loginSenha" required style="width: 100%; margin-bottom: 10px;">
+            </div>
+            <button type="submit" style="width: 100%; padding: 8px;">Entrar</button>
+        </form>
+
+        <hr style="margin: 20px 0;">
+
+        <h2>Criar Conta</h2>
+        <form id="formCadastro">
+            <div>
+                <label>Nome Completo:</label><br>
+                <input type="text" id="cadNome" required style="width: 100%; margin-bottom: 10px;">
+            </div>
+            <div>
+                <label>E-mail:</label><br>
+                <input type="email" id="cadEmail" required style="width: 100%; margin-bottom: 10px;">
+            </div>
+            <div>
+                <label>Senha:</label><br>
+                <input type="password" id="cadSenha" required style="width: 100%; margin-bottom: 10px;">
+            </div>
+            <div>
+                <label>Perfil:</label><br>
+                <select id="cadTipo" style="width: 100%; margin-bottom: 10px;">
+                    <option value="professor">Professor</option>
+                    <option value="admin">Administrador</option>
+                </select>
+            </div>
+            <button type="submit" style="width: 100%; padding: 8px; background-color: #475569; color: white;">Cadastrar</button>
+        </form>
+    </div>
+
+    <script>
+        // Lógica de Cadastro
+        document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/auth/cadastro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nome: document.getElementById('cadNome').value,
+                        email: document.getElementById('cadEmail').value,
+                        senha: document.getElementById('cadSenha').value,
+                        tipo: document.getElementById('cadTipo').value
+                    })
+                });
+                const data = await res.json();
+                alert(data.message || data.error);
+            } catch (err) {
+                alert('Erro na conexão com o servidor.');
+            }
+        });
+
+        // Lógica de Login
+        document.getElementById('formLogin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('loginEmail').value,
+                        senha: document.getElementById('loginSenha').value
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('usuario', JSON.stringify(data.usuario));
+                    if (data.usuario.tipo === 'admin') {
+                        window.location.href = '/index.html';
+                    } else {
+                        window.location.href = '/professor.html';
+                    }
+                } else {
+                    alert(data.error);
+                }
+            } catch (err) {
+                alert('Erro ao conectar ao servidor.');
+            }
+        });
+    </script>
+</body>
+</html>
