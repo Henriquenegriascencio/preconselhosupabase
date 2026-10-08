@@ -55,11 +55,10 @@
 </div>
 
 <script>
-    // Se o seu backend estiver no Render, troque 'http://localhost:3000' pelo seu link do Render
-    const API_URL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000' 
-        : 'https://SEU-BACKEND-NO-RENDER.onrender.com';
-
+    
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : 'https://pre-conselho-api.onrender.com'; // <-- Cole a URL do Render aqui
     document.getElementById('formLogin').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value;
