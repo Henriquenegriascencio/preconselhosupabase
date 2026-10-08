@@ -8,8 +8,8 @@ app.use(cors());
 app.use(express.json());
 
 // --- COLE AQUI AS SUAS CREDENCIAIS DO SUPABASE ---
-const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co'; 
-const SUPABASE_KEY = 'SUA-CHAVE-ANON-PUBLIC-AQUI';
+const SUPABASE_URL = 'https://qizdxvgyuophdwfltclr.supabase.co'; 
+const SUPABASE_KEY = 'sb_publishable_yuPsroBYbFDRLXbZ7unxyw_fqarLtvK';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
