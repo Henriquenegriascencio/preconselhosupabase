@@ -1,14 +1,21 @@
 const express = require('express');
+const cors = require('cors'); // <-- Adicione esta linha
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
+app.use(cors()); // <-- Apenas isso libera o acesso do GitHub Pages!
 app.use(express.json());
+
+// Pode colocar a URL e a KEY direto aqui para não complicar
+const supabase = createClient(
+    'https://qizdxvgyuophdwfltclr.supabase.co/rest/v1/', 
+    'sb_publishable_yuPsroBYbFDRLXbZ7unxyw_fqarLtvK'
+);
 
 // Conexão com o Supabase usando variáveis de ambiente
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Servir arquivos estáticos (HTML, CSS, JS)
 app.use(express.static(__dirname));
