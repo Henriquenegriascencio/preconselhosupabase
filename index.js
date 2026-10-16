@@ -10,76 +10,108 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 1. TURMAS E MATÉRIAS
+// 1. GESTÃO DE TURMAS
 app.get('/api/admin/turmas', async (req, res) => {
-    const { data, error } = await supabase.from('turmas').select('*').order('nome');
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
-});
-
-app.post('/api/admin/turmas', async (req, res) => {
-    const { nome } = req.body;
-    const { data, error } = await supabase.from('turmas').insert([{ nome }]).select();
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data[0]);
-});
-
-app.get('/api/admin/materias', async (req, res) => {
-    const { data, error } = await supabase.from('materias').select('*').order('nome');
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
-});
-
-app.post('/api/admin/materias', async (req, res) => {
-    const { nome } = req.body;
-    const { data, error } = await supabase.from('materias').insert([{ nome }]).select();
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data[0]);
-});
-
-app.get('/api/admin/professores', async (req, res) => {
-    const { data, error } = await supabase.from('usuarios').select('id, nome, email').eq('tipo', 'Professor');
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
-});
-
-// 2. VÍNCULOS DE PROFESSORES COM MATÉRIAS E TURMAS
-app.post('/api/admin/vincular-professor', async (req, res) => {
-    const { professor_id, turma_id, materia_id } = req.body;
-    const { data, error } = await supabase
-        .from('professor_turmas')
-        .insert([{ professor_id, turma_id, materia_id }])
-        .select();
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data[0]);
-});
-
-app.get('/api/professor/turmas/:professorId', async (req, res) => {
     try {
-        const { data, error } = await supabase
-            .from('professor_turmas')
-            .select(`
-                turma_id,
-                turmas ( id, nome ),
-                materias ( id, nome )
-            `)
-            .eq('professor_id', req.params.professorId);
-
+        const { data, error } = await supabase.from('turmas').select('*').order('nome');
         if (error) throw error;
-
-        const resultado = data.map(item => ({
-            turma_id: item.turmas?.id || item.turma_id,
-            turma_nome: item.turmas?.nome || 'Turma não informada',
-            materia_nome: item.materias?.nome || 'Matéria Geral'
-        }));
-
-        res.json(resultado);
+        res.json(data || []);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// 3. FICHAS E PERGUNTAS
+app.post('/api/admin/turmas', async (req, res) => {
+    try {
+        const { nome } = req.body;
+        const { data, error } = await supabase.from('turmas').insert([{ nome }]).select();
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. GESTÃO DE MATÉRIAS
+app.get('/api/admin/materias', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('materias').select('*').order('nome');
+        if (error) throw error;
+        res.json(data || []);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/materias', async (req, res) => {
+    try {
+        const { nome } = req.body;
+        const { data, error } = await supabase.from('materias').insert([{ nome }]).select();
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. USUÁRIOS E VÍNCULOS
+app.get('/api/admin/professores', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('usuarios').select('id, nome, email').eq('tipo', 'Professor');
+        if (error) throw error;
+        res.json(data || []);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/vincular-professor', async (req, res) => {
+    try {
+        const { professor_id, turma_id, materia_id } = req.body;
+        const { data, error } = await supabase
+            .from('professor_turmas')
+            .insert([{ professor_id, turma_id, materia_id }])
+            .select();
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Lista as turmas e matérias do professor sem dependência de Foreign Keys
+app.get('/api/professor/turmas/:professorId', async (req, res) => {
+    try {
+        const { data: vinculos, error: errVinculo } = await supabase
+            .from('professor_turmas')
+            .select('*')
+            .eq('professor_id', req.params.professorId);
+
+        if (errVinculo) throw errVinculo;
+        if (!vinculos || vinculos.length === 0) return res.json([]);
+
+        const { data: turmas } = await supabase.from('turmas').select('id, nome');
+        const { data: materias } = await supabase.from('materias').select('id, nome');
+
+        const resultado = vinculos.map(item => {
+            const turma = turmas?.find(t => t.id === item.turma_id);
+            const materia = materias?.find(m => m.id === item.materia_id);
+
+            return {
+                turma_id: item.turma_id,
+                turma_nome: turma ? turma.nome : `Turma ID ${item.turma_id}`,
+                materia_nome: materia ? materia.nome : 'Não especificada'
+            };
+        });
+
+        res.json(resultado);
+    } catch (err) {
+        console.error('Erro em /api/professor/turmas:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4. GESTÃO DE FICHAS E PERGUNTAS
 app.post('/api/admin/fichas', async (req, res) => {
     const { titulo, turma_id, materia_id, data_limite, perguntas } = req.body;
     try {
@@ -107,67 +139,95 @@ app.post('/api/admin/fichas', async (req, res) => {
     }
 });
 
-// Lista todas as fichas ativas (para o admin)
+// Lista todas as fichas (Administrador)
 app.get('/api/admin/fichas', async (req, res) => {
-    const { data, error } = await supabase
-        .from('fichas_avaliacao')
-        .select(`
-            id,
-            titulo,
-            turma_id,
-            turmas ( nome ),
-            materias ( nome )
-        `);
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+    try {
+        const { data: fichas, error: errFichas } = await supabase
+            .from('fichas_avaliacao')
+            .select('*');
+
+        if (errFichas) throw errFichas;
+        if (!fichas || fichas.length === 0) return res.json([]);
+
+        const { data: turmas } = await supabase.from('turmas').select('id, nome');
+        const { data: materias } = await supabase.from('materias').select('id, nome');
+
+        const resultado = fichas.map(f => {
+            const turma = turmas?.find(t => t.id === f.turma_id);
+            const materia = materias?.find(m => m.id === f.materia_id);
+            return {
+                id: f.id,
+                titulo: f.titulo,
+                turma_id: f.turma_id,
+                turmas: { nome: turma ? turma.nome : `Turma ID ${f.turma_id}` },
+                materias: { nome: materia ? materia.nome : `Matéria ID ${f.materia_id}` }
+            };
+        });
+
+        res.json(resultado);
+    } catch (err) {
+        console.error('Erro em /api/admin/fichas:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Lista fichas atribuídas apenas às turmas do professor
+// Lista fichas por professor
 app.get('/api/professor/fichas/:professorId', async (req, res) => {
     try {
-        // Busca turmas vinculadas ao professor
         const { data: vinculos, error: errVinculo } = await supabase
             .from('professor_turmas')
             .select('turma_id')
             .eq('professor_id', req.params.professorId);
 
         if (errVinculo) throw errVinculo;
-
-        if (!vinculos || vinculos.length === 0) {
-            return res.json([]);
-        }
+        if (!vinculos || vinculos.length === 0) return res.json([]);
 
         const turmasIds = vinculos.map(v => v.turma_id);
 
         const { data: fichas, error: errFichas } = await supabase
             .from('fichas_avaliacao')
-            .select(`
-                id,
-                titulo,
-                turma_id,
-                turmas ( nome ),
-                materias ( nome )
-            `)
+            .select('*')
             .in('turma_id', turmasIds);
 
         if (errFichas) throw errFichas;
+        if (!fichas || fichas.length === 0) return res.json([]);
 
-        res.json(fichas);
+        const { data: turmas } = await supabase.from('turmas').select('id, nome');
+        const { data: materias } = await supabase.from('materias').select('id, nome');
+
+        const resultado = fichas.map(f => {
+            const turma = turmas?.find(t => t.id === f.turma_id);
+            const materia = materias?.find(m => m.id === f.materia_id);
+            return {
+                id: f.id,
+                titulo: f.titulo,
+                turma_id: f.turma_id,
+                turmas: { nome: turma ? turma.nome : `Turma ID ${f.turma_id}` },
+                materias: { nome: materia ? materia.nome : `Matéria ID ${f.materia_id}` }
+            };
+        });
+
+        res.json(resultado);
     } catch (err) {
+        console.error('Erro em /api/professor/fichas:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
 app.get('/api/fichas/:fichaId/perguntas', async (req, res) => {
-    const { data, error } = await supabase
-        .from('perguntas')
-        .select('*')
-        .eq('ficha_id', req.params.fichaId);
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+    try {
+        const { data, error } = await supabase
+            .from('perguntas')
+            .select('*')
+            .eq('ficha_id', req.params.fichaId);
+        if (error) throw error;
+        res.json(data || []);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// 4. RESPOSTAS E RELATÓRIO DE DESEMPENHO
+// 5. RESPOSTAS E RELATÓRIOS
 app.post('/api/professor/respostas', async (req, res) => {
     const { ficha_id, professor_id, respostas } = req.body;
     try {
@@ -179,7 +239,7 @@ app.post('/api/professor/respostas', async (req, res) => {
             anotacoes: r.anotacoes || ''
         }));
 
-        const { data, error } = await supabase.from('respostas_pre_conselho').insert(registros);
+        const { error } = await supabase.from('respostas_pre_conselho').insert(registros);
         if (error) throw error;
         res.json({ message: 'Respostas salvas com sucesso' });
     } catch (err) {
@@ -187,54 +247,42 @@ app.post('/api/professor/respostas', async (req, res) => {
     }
 });
 
+// Relatório de Desempenho
 app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
     try {
         const fichaId = parseInt(req.params.id, 10);
-
         if (isNaN(fichaId)) {
             return res.status(400).json({ error: 'ID da ficha inválido' });
         }
 
-        // 1. Procurar respostas para a ficha selecionada
         const { data: respostas, error: errResp } = await supabase
             .from('respostas_pre_conselho')
             .select('*')
             .eq('ficha_id', fichaId);
 
-        if (errResp) {
-            console.error('Erro Supabase Respostas:', errResp);
-            throw errResp;
-        }
+        if (errResp) throw errResp;
+        if (!respostas || respostas.length === 0) return res.json([]);
 
-        if (!respostas || respostas.length === 0) {
-            return res.json([]);
-        }
-
-        // 2. Extrair IDs de perguntas (filtrando nulos)
         const perguntaIds = [...new Set(respostas.map(r => r.pergunta_id))].filter(id => id != null);
         let perguntas = [];
         if (perguntaIds.length > 0) {
-            const { data: dataPerg, error: errPerg } = await supabase
+            const { data: dataPerg } = await supabase
                 .from('perguntas')
                 .select('id, texto_pergunta, categoria')
                 .in('id', perguntaIds);
-
-            if (!errPerg && dataPerg) perguntas = dataPerg;
+            if (dataPerg) perguntas = dataPerg;
         }
 
-        // 3. Extrair IDs de professores (filtrando nulos)
         const profIds = [...new Set(respostas.map(r => r.professor_id))].filter(id => id != null);
         let professores = [];
         if (profIds.length > 0) {
-            const { data: dataProf, error: errProf } = await supabase
+            const { data: dataProf } = await supabase
                 .from('usuarios')
                 .select('id, nome')
                 .in('id', profIds);
-
-            if (!errProf && dataProf) professores = dataProf;
+            if (dataProf) professores = dataProf;
         }
 
-        // 4. Cruzar os dados com fallbacks seguros
         const resultadoFormatado = respostas.map(r => {
             const pergunta = perguntas.find(p => p.id === r.pergunta_id);
             const prof = professores.find(p => p.id === r.professor_id);
@@ -250,9 +298,8 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
         });
 
         return res.json(resultadoFormatado);
-
     } catch (err) {
-        console.error('Erro geral ao procurar respostas:', err);
+        console.error('Erro em /api/admin/fichas/respostas:', err);
         return res.status(500).json({ error: err.message });
     }
 });
