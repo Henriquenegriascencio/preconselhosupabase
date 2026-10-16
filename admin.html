@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel do Administrador - Pré-Conselho</title>
     <style>
-        /* VARIÁVEIS DE TEMA (CLARO POR PADRÃO) */
         :root {
             --bg-body: #f8fafc;
             --bg-card: #ffffff;
@@ -20,7 +19,6 @@
             --primary-hover: #1e40af;
         }
 
-        /* VARIÁVEIS PARA MODO ESCURO */
         [data-theme="dark"] {
             --bg-body: #090d16;
             --bg-card: #111827;
@@ -46,7 +44,6 @@
             transition: background 0.3s, color 0.3s;
         }
 
-        /* TOPBAR PRINCIPAL */
         .topbar {
             background: var(--topbar-bg);
             color: #ffffff;
@@ -93,13 +90,35 @@
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s, border-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 36px;
         }
         .btn-header:hover { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.3); }
 
         .btn-logout { background: #dc2626; border: none; }
         .btn-logout:hover { background: #b91c1c; }
 
-        /* CONTEÚDO PRINCIPAL */
+        #iconeTema {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px !important;
+            height: 16px !important;
+            min-width: 16px;
+        }
+
+        #iconeTema svg {
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+            fill: currentColor;
+            display: block;
+        }
+
         .container { flex: 1; max-width: 850px; width: 100%; margin: 30px auto; padding: 0 20px; }
 
         .aba-conteudo { display: none; }
@@ -143,18 +162,28 @@
             align-items: center;
         }
 
-        .resposta-card {
+        /* CAIXA DE GRUPO POR PROFESSOR NO DESEMPENHO */
+        .bloco-professor {
             background: var(--bg-box);
             border: 1px solid var(--border-input);
-            padding: 16px;
+            border-left: 4px solid var(--primary);
+            padding: 20px;
             border-radius: 6px;
-            margin-bottom: 14px;
+            margin-bottom: 20px;
         }
-        .resposta-card header {
-            font-weight: 700;
-            color: #3b82f6;
-            margin-bottom: 6px;
-            font-size: 14px;
+        .bloco-professor h3 {
+            font-size: 16px;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .item-resposta {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 12px 14px;
+            border-radius: 6px;
+            margin-bottom: 10px;
         }
 
         .pergunta-box {
@@ -182,7 +211,6 @@
         .btn-dark { background: #1e293b; }
         .btn-dark:hover { background: #0f172a; }
 
-        /* FOOTER */
         .footer {
             background: var(--topbar-bg);
             color: #94a3b8;
@@ -215,7 +243,6 @@
         <button class="btn-header" id="btnTema" onclick="alternarTema()">
             <span id="iconeTema"></span>
             <span id="textoTema">Modo Escuro</span>
-        </button>
         </button>
         <button class="btn-header" onclick="mudarAba('config')">Configurações</button>
         <button class="btn-header btn-logout" onclick="logout()">Sair</button>
@@ -270,7 +297,7 @@
         </div>
     </div>
 
-    <!-- ABA 3: MATÉRIAS -->
+    <!-- ABA 3: MATÉRIAS (CADASTRO E LISTAGEM) -->
     <div id="aba-materias" class="aba-conteudo">
         <div class="card">
             <h2>Cadastrar Nova Matéria</h2>
@@ -279,6 +306,13 @@
                 <input type="text" id="nomeMateria" required placeholder="Ex: Matemática, Português...">
                 <button type="submit" class="btn-primary">Cadastrar Matéria</button>
             </form>
+        </div>
+
+        <div class="card">
+            <h2>Matérias Cadastradas</h2>
+            <div id="listaMateriasCadastradas">
+                <p style="color: var(--text-muted);">Carregando matérias...</p>
+            </div>
         </div>
     </div>
 
@@ -308,7 +342,7 @@
             </select>
 
             <div id="containerDesempenho" style="margin-top: 20px;">
-                <p style="color: var(--text-muted); font-style: italic;">Selecione uma ficha acima para carregar o relatório de avaliação dos professores.</p>
+                <p style="color: var(--text-muted); font-style: italic;">Selecione uma ficha acima para carregar o relatório detalhado.</p>
             </div>
         </div>
     </div>
@@ -341,41 +375,47 @@
         ? 'http://localhost:3000' 
         : 'https://preconselhosupabase.onrender.com';
 
-    // GERENCIAMENTO DO MODO ESCURO
     const iconeSol = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>`;
-    const iconeLua = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12.3 2a10 10 0 0 0-1.9 20 10 10 0 0 0 9.6-7 1 1 0 0 0-1.2-1.3 8 8 0 1 1-6.5-11.7 1 1 0 0 0 0-2z"/></svg>`;   
+    const iconeLua = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12.3 2a10 10 0 0 0-1.9 20 10 10 0 0 0 9.6-7 1 1 0 0 0-1.2-1.3 8 8 0 1 1-6.5-11.7 1 1 0 0 0 0-2z"/></svg>`;
 
-
-function atualizarBotaoTema(tema) {
-    const iconeEl = document.getElementById('iconeTema');
-    const textoEl = document.getElementById('textoTema');
-
-    if (iconeEl && textoEl) {
-        if (tema === 'dark') {
-            iconeEl.innerHTML = iconeSol;
-            textoEl.textContent = 'Modo Claro';
-        } else {
-            iconeEl.innerHTML = iconeLua;
-            textoEl.textContent = 'Modo Escuro';
+    function atualizarBotaoTema(tema) {
+        const iconeEl = document.getElementById('iconeTema');
+        const textoEl = document.getElementById('textoTema');
+        if (iconeEl && textoEl) {
+            if (tema === 'dark') {
+                iconeEl.innerHTML = iconeSol;
+                textoEl.textContent = 'Modo Claro';
+            } else {
+                iconeEl.innerHTML = iconeLua;
+                textoEl.textContent = 'Modo Escuro';
+            }
         }
     }
-}
 
-function aplicarTemaSalvo() {
-    const tema = localStorage.getItem('tema') || 'light';
-    document.documentElement.setAttribute('data-theme', tema);
-    atualizarBotaoTema(tema);
-}
+    function aplicarTemaSalvo() {
+        const tema = localStorage.getItem('tema') || 'light';
+        document.documentElement.setAttribute('data-theme', tema);
+        atualizarBotaoTema(tema);
+    }
 
-function alternarTema() {
-    const temaAtual = document.documentElement.getAttribute('data-theme');
-    const novoTema = temaAtual === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', novoTema);
-    localStorage.setItem('tema', novoTema);
-    atualizarBotaoTema(novoTema);
-}
+    function alternarTema() {
+        const temaAtual = document.documentElement.getAttribute('data-theme');
+        const novoTema = temaAtual === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', novoTema);
+        localStorage.setItem('tema', novoTema);
+        atualizarBotaoTema(novoTema);
+    }
 
-aplicarTemaSalvo();
+    aplicarTemaSalvo();
+
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (!usuario || usuario.tipo !== 'Admin') {
+        window.location.href = 'index.html';
+    } else {
+        document.getElementById('adminNome').textContent = usuario.nome;
+        document.getElementById('configNome').value = usuario.nome;
+        document.getElementById('configEmail').value = usuario.email;
+    }
 
     let contadorPerguntas = 0;
 
@@ -384,9 +424,7 @@ aplicarTemaSalvo();
         document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
         
         document.getElementById(`aba-${idAba}`).classList.add('active');
-        if (elBotao) {
-            elBotao.classList.add('active');
-        }
+        if (elBotao) elBotao.classList.add('active');
     }
 
     async function carregarTurmas() {
@@ -403,7 +441,7 @@ aplicarTemaSalvo();
                 containerLista.innerHTML = turmas.map(t => `
                     <div class="item-lista">
                         <strong>${t.nome}</strong>
-                        <span style="font-size:12px; color:var(--text-muted);">ID da Turma: ${t.id}</span>
+                        <span style="font-size:12px; color:var(--text-muted);">ID: ${t.id}</span>
                     </div>
                 `).join('');
             } else {
@@ -421,11 +459,20 @@ aplicarTemaSalvo();
             const res = await fetch(`${API_URL}/api/admin/materias`);
             const materias = await res.json();
             const select = document.getElementById('materiaId');
+            const containerLista = document.getElementById('listaMateriasCadastradas');
+
             let options = '<option value="">-- Selecione uma Matéria --</option>';
             if (materias.length > 0) {
-                materias.forEach(m => options += `<option value="${m.id}">${m.nome} (ID: ${m.id})</option>`);
+                options += materias.map(m => `<option value="${m.id}">${m.nome} (ID: ${m.id})</option>`).join('');
+                containerLista.innerHTML = materias.map(m => `
+                    <div class="item-lista">
+                        <strong>${m.nome}</strong>
+                        <span style="font-size:12px; color:var(--text-muted);">ID: ${m.id}</span>
+                    </div>
+                `).join('');
             } else {
                 options = '<option value="">Nenhuma matéria cadastrada</option>';
+                containerLista.innerHTML = '<p style="color: var(--text-muted);">Nenhuma matéria cadastrada no momento.</p>';
             }
             select.innerHTML = options;
         } catch (err) { console.error(err); }
@@ -454,10 +501,17 @@ aplicarTemaSalvo();
             select.innerHTML = '<option value="">-- Selecione uma Ficha --</option>';
             
             if (fichas.length > 0) {
+                // Tenta buscar o nome da turma para cada ficha
+                const resTurmas = await fetch(`${API_URL}/api/admin/turmas`);
+                const turmas = await resTurmas.json();
+
                 fichas.forEach(f => {
+                    const turmaEncontrada = turmas.find(t => t.id === f.turma_id);
+                    const nomeTurma = turmaEncontrada ? turmaEncontrada.nome : `ID ${f.turma_id}`;
+                    
                     const opt = document.createElement('option');
                     opt.value = f.id;
-                    opt.textContent = `${f.titulo} (Turma ID: ${f.turma_id})`;
+                    opt.textContent = `${f.titulo} - Turma: ${nomeTurma}`;
                     select.appendChild(opt);
                 });
             }
@@ -469,7 +523,7 @@ aplicarTemaSalvo();
         const container = document.getElementById('containerDesempenho');
 
         if (!fichaId) {
-            container.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">Selecione uma ficha acima para carregar o relatório de avaliação dos professores.</p>';
+            container.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">Selecione uma ficha acima para carregar o relatório detalhado.</p>';
             return;
         }
 
@@ -482,14 +536,31 @@ aplicarTemaSalvo();
                 return;
             }
 
-            container.innerHTML = respostas.map(r => `
-                <div class="resposta-card">
-                    <header>Professor: ${r.professor_nome}</header>
-                    <p style="font-size:14px; margin-bottom:6px;"><strong>Pergunta:</strong> ${r.texto_pergunta} (${r.categoria})</p>
-                    <p style="font-size:14px; margin-bottom:4px;"><strong>Resposta:</strong> ${r.resposta}</p>
-                    ${r.anotacoes ? `<p style="font-size:13px; color:var(--text-muted);"><strong>Anotações:</strong> ${r.anotacoes}</p>` : ''}
-                </div>
-            `).join('');
+            // AGRUPAMENTO DE RESPOSTAS POR PROFESSOR
+            const agrupadoPorProfessor = {};
+            respostas.forEach(r => {
+                if (!agrupadoPorProfessor[r.professor_nome]) {
+                    agrupadoPorProfessor[r.professor_nome] = [];
+                }
+                agrupadoPorProfessor[r.professor_nome].push(r);
+            });
+
+            let html = '';
+            for (const [professor, lista] of Object.entries(agrupadoPorProfessor)) {
+                html += `
+                    <div class="bloco-professor">
+                        <h3>Professor(a): ${professor}</h3>
+                        ${lista.map(item => `
+                            <div class="item-resposta">
+                                <p style="font-size:14px; margin-bottom:4px;"><strong>Pergunta:</strong> ${item.texto_pergunta} <span style="font-size:11px; color:#3b82f6;">(${item.categoria})</span></p>
+                                <p style="font-size:14px; margin-bottom:4px;"><strong>Resposta:</strong> ${item.resposta}</p>${item.anotacoes ? `<p style="font-size:13px; color:var(--text-muted);"><strong>Anotações:</strong> ${item.anotacoes}</p>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
         } catch (err) {
             container.innerHTML = '<p style="color: #dc2626;">Erro ao carregar respostas de desempenho.</p>';
         }

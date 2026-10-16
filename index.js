@@ -184,7 +184,9 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
                     nome
                 ),
                 fichas_avaliacao!inner (
-                    turma_id
+                    titulo,
+                    turmas!inner ( nome ),
+                    materias!inner ( nome )
                 )
             `)
             .eq('ficha_id', req.params.id);
@@ -196,7 +198,8 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
             texto_pergunta: r.perguntas?.texto_pergunta,
             categoria: r.perguntas?.categoria,
             professor_nome: r.usuarios?.nome,
-            turma_id: r.fichas_avaliacao?.turma_id,
+            turma_nome: r.fichas_avaliacao?.turmas?.nome,
+            materia_nome: r.fichas_avaliacao?.materias?.nome,
             resposta: r.resposta,
             anotacoes: r.anotacoes
         }));
