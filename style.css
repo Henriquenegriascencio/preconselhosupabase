@@ -85,21 +85,42 @@ button:hover {
 }
 
 .btn-header {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
+    height: 36px; /* Força uma altura padrão alinhada */
 }
 
+.btn-header:hover { 
+    background: rgba(255, 255, 255, 0.16); 
+    border-color: rgba(255, 255, 255, 0.3); 
+}
+
+/* Força o SVG a ter EXATAMENTE 16px e não estourar a tela */
 #iconeTema {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px;
 }
 
 #iconeTema svg {
-    width: 16px;
-    height: 16px;
+    width: 16px !important;
+    height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
     fill: currentColor;
+    display: block;
 }
