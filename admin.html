@@ -5,19 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel do Administrador - Pré-Conselho</title>
     <style>
+        /* VARIÁVEIS DE TEMA (CLARO POR PADRÃO) */
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-input: #f8fafc;
+            --bg-box: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --border-input: #cbd5e1;
+            --topbar-bg: #0f172a;
+            --primary: #1d4ed8;
+            --primary-hover: #1e40af;
+        }
+
+        /* VARIÁVEIS PARA MODO ESCURO */
+        [data-theme="dark"] {
+            --bg-body: #090d16;
+            --bg-card: #111827;
+            --bg-input: #1f2937;
+            --bg-box: #1f2937;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --border-input: #4b5563;
+            --topbar-bg: #030712;
+            --primary: #2563eb;
+            --primary-hover: #3b82f6;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
-            background: #f8fafc; 
-            color: #0f172a; 
+            background: var(--bg-body); 
+            color: var(--text-main); 
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
         }
 
         /* TOPBAR PRINCIPAL */
         .topbar {
-            background: #0f172a;
+            background: var(--topbar-bg);
             color: #ffffff;
             padding: 0 24px;
             height: 64px;
@@ -48,7 +79,7 @@
         .nav-btn:hover { color: #ffffff; background: rgba(255,255,255,0.04); }
         .nav-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
 
-        .topbar-user { display: flex; align-items: center; gap: 12px; }
+        .topbar-user { display: flex; align-items: center; gap: 10px; }
         .user-info { font-size: 12px; text-align: right; color: #cbd5e1; margin-right: 4px; }
         .user-info strong { display: block; color: #ffffff; font-size: 13px; }
 
@@ -75,36 +106,35 @@
         .aba-conteudo.active { display: block; }
 
         .card {
-            background: #ffffff;
+            background: var(--bg-card);
             padding: 28px;
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border-color);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             margin-bottom: 20px;
         }
-        .card h2 { font-size: 18px; color: #0f172a; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; font-weight: 700; }
+        .card h2 { font-size: 18px; color: var(--text-main); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); font-weight: 700; }
 
-        label { display: block; margin-top: 14px; font-weight: 600; font-size: 13px; color: #334155; }
+        label { display: block; margin-top: 14px; font-weight: 600; font-size: 13px; color: var(--text-muted); }
         input, select {
             width: 100%;
             padding: 10px 12px;
             margin-top: 6px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-input);
             border-radius: 6px;
             font-size: 14px;
-            background: #f8fafc;
-            color: #0f172a;
+            background: var(--bg-input);
+            color: var(--text-main);
         }
         input:focus, select:focus {
             outline: none;
-            border-color: #2563eb;
-            background: #ffffff;
+            border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
 
         .item-lista {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
+            background: var(--bg-box);
+            border: 1px solid var(--border-input);
             padding: 14px;
             border-radius: 6px;
             margin-bottom: 10px;
@@ -114,29 +144,29 @@
         }
 
         .resposta-card {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
+            background: var(--bg-box);
+            border: 1px solid var(--border-input);
             padding: 16px;
             border-radius: 6px;
             margin-bottom: 14px;
         }
         .resposta-card header {
             font-weight: 700;
-            color: #1d4ed8;
+            color: #3b82f6;
             margin-bottom: 6px;
             font-size: 14px;
         }
 
         .pergunta-box {
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border-color);
             padding: 16px;
             margin-top: 14px;
             border-radius: 6px;
-            background: #f8fafc;
+            background: var(--bg-box);
         }
 
         button.btn-primary {
-            background: #1d4ed8;
+            background: var(--primary);
             color: #ffffff;
             border: none;
             padding: 10px 18px;
@@ -147,14 +177,14 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        button.btn-primary:hover { background: #1e40af; }
+        button.btn-primary:hover { background: var(--primary-hover); }
 
-        .btn-dark { background: #0f172a; }
-        .btn-dark:hover { background: #000000; }
+        .btn-dark { background: #1e293b; }
+        .btn-dark:hover { background: #0f172a; }
 
         /* FOOTER */
         .footer {
-            background: #0f172a;
+            background: var(--topbar-bg);
             color: #94a3b8;
             text-align: center;
             padding: 16px 20px;
@@ -182,6 +212,7 @@
             <strong id="adminNome">Administrador</strong>
             <span>Gestão Escolar</span>
         </div>
+        <button class="btn-header" onclick="alternarTema()">Modo Escuro</button>
         <button class="btn-header" onclick="mudarAba('config')">Configurações</button>
         <button class="btn-header btn-logout" onclick="logout()">Sair</button>
     </div>
@@ -206,7 +237,7 @@
                 <label>Data Limite para Resposta</label>
                 <input type="date" id="dataLimite">
 
-                <h3 style="margin-top: 24px; font-size: 15px; color: #334155;">Perguntas da Ficha</h3>
+                <h3 style="margin-top: 24px; font-size: 15px; color: var(--text-muted);">Perguntas da Ficha</h3>
                 <div id="containerPerguntas"></div>
                 <button type="button" class="btn-primary btn-dark" onclick="adicionarPergunta()">Adicionar Pergunta</button>
 
@@ -230,7 +261,7 @@
         <div class="card">
             <h2>Turmas Cadastradas</h2>
             <div id="listaTurmasCadastradas">
-                <p style="color: #64748b;">Carregando turmas...</p>
+                <p style="color: var(--text-muted);">Carregando turmas...</p>
             </div>
         </div>
     </div>
@@ -263,7 +294,7 @@
         </div>
     </div>
 
-    <!-- ABA 5: DESEMPENHO GERAL DA TURMA (EXCLUSIVO ADMIN) -->
+    <!-- ABA 5: DESEMPENHO GERAL DA TURMA -->
     <div id="aba-desempenho" class="aba-conteudo">
         <div class="card">
             <h2>Painel de Desempenho Geral por Ficha</h2>
@@ -273,7 +304,7 @@
             </select>
 
             <div id="containerDesempenho" style="margin-top: 20px;">
-                <p style="color: #64748b; font-style: italic;">Selecione uma ficha acima para carregar o relatório de avaliação dos professores.</p>
+                <p style="color: var(--text-muted); font-style: italic;">Selecione uma ficha acima para carregar o relatório de avaliação dos professores.</p>
             </div>
         </div>
     </div>
@@ -282,7 +313,7 @@
     <div id="aba-config" class="aba-conteudo">
         <div class="card">
             <h2>Configurações da Conta</h2>
-            <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">Informações da conta de administrador em uso.</p>
+            <p style="margin-bottom: 15px; font-size: 14px; color: var(--text-muted);">Informações da conta de administrador em uso.</p>
             
             <label>Nome Completo</label>
             <input type="text" id="configNome" readonly>
@@ -305,6 +336,21 @@
     const API_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:3000' 
         : 'https://preconselhosupabase.onrender.com';
+
+    // GERENCIAMENTO DO MODO ESCURO
+    function aplicarTemaSalvo() {
+        const tema = localStorage.getItem('tema') || 'light';
+        document.documentElement.setAttribute('data-theme', tema);
+    }
+
+    function alternarTema() {
+        const temaAtual = document.documentElement.getAttribute('data-theme');
+        const novoTema = temaAtual === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', novoTema);
+        localStorage.setItem('tema', novoTema);
+    }
+
+    aplicarTemaSalvo();
 
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (!usuario || usuario.tipo !== 'Admin') {
@@ -341,12 +387,12 @@
                 containerLista.innerHTML = turmas.map(t => `
                     <div class="item-lista">
                         <strong>${t.nome}</strong>
-                        <span style="font-size:12px; color:#64748b;">ID da Turma: ${t.id}</span>
+                        <span style="font-size:12px; color:var(--text-muted);">ID da Turma: ${t.id}</span>
                     </div>
                 `).join('');
             } else {
                 options = '<option value="">Nenhuma turma cadastrada</option>';
-                containerLista.innerHTML = '<p style="color: #64748b;">Nenhuma turma cadastrada no momento.</p>';
+                containerLista.innerHTML = '<p style="color: var(--text-muted);">Nenhuma turma cadastrada no momento.</p>';
             }
 
             selectFicha.innerHTML = options;
@@ -407,7 +453,7 @@
         const container = document.getElementById('containerDesempenho');
 
         if (!fichaId) {
-            container.innerHTML = '<p style="color: #64748b; font-style: italic;">Selecione uma ficha acima para carregar o relatório de avaliação dos professores.</p>';
+            container.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">Selecione uma ficha acima para carregar o relatório de avaliação dos professores.</p>';
             return;
         }
 
@@ -416,7 +462,7 @@
             const respostas = await res.json();
 
             if (respostas.length === 0) {
-                container.innerHTML = '<p style="color: #64748b;">Nenhum professor respondeu esta ficha ainda.</p>';
+                container.innerHTML = '<p style="color: var(--text-muted);">Nenhum professor respondeu esta ficha ainda.</p>';
                 return;
             }
 
@@ -425,7 +471,7 @@
                     <header>Professor: ${r.professor_nome}</header>
                     <p style="font-size:14px; margin-bottom:6px;"><strong>Pergunta:</strong> ${r.texto_pergunta} (${r.categoria})</p>
                     <p style="font-size:14px; margin-bottom:4px;"><strong>Resposta:</strong> ${r.resposta}</p>
-                    ${r.anotacoes ? `<p style="font-size:13px; color:#64748b;"><strong>Anotações:</strong> ${r.anotacoes}</p>` : ''}
+                    ${r.anotacoes ? `<p style="font-size:13px; color:var(--text-muted);"><strong>Anotações:</strong> ${r.anotacoes}</p>` : ''}
                 </div>
             `).join('');
         } catch (err) {
