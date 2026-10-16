@@ -5,52 +5,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Pré-Conselho</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f4f4f9; margin: 0; }
-        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 320px; }
-        h2, h3 { text-align: center; color: #333; margin-bottom: 15px; }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
-        input, select { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { width: 100%; padding: 10px; margin-top: 15px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; color: white; }
-        .btn-blue { background-color: #2563eb; }
-        .btn-dark { background-color: #4b5563; }
-        hr { margin: 20px 0; border: 0; border-top: 1px solid #ddd; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            padding: 20px;
+        }
+        .card { 
+            background: #ffffff; 
+            padding: 35px 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25); 
+            width: 100%; 
+            max-width: 400px; 
+        }
+        .brand-header { text-align: center; margin-bottom: 25px; }
+        .brand-header h2 { font-size: 26px; color: #0f172a; font-weight: 700; }
+        .brand-header p { font-size: 14px; color: #64748b; margin-top: 4px; }
+        
+        h3 { font-size: 18px; color: #0f172a; margin-bottom: 15px; }
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 13px; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input, select { 
+            width: 100%; 
+            padding: 11px 14px; 
+            margin-top: 6px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            font-size: 15px;
+            color: #0f172a;
+            background-color: #f8fafc;
+            transition: all 0.2s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 18px; 
+            border: none; 
+            border-radius: 6px; 
+            font-size: 15px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        button:active { transform: scale(0.99); }
+        
+        .btn-blue { background-color: #1d4ed8; color: #ffffff; }
+        .btn-blue:hover { background-color: #1e40af; }
+        
+        .btn-black { background-color: #0f172a; color: #ffffff; }
+        .btn-black:hover { background-color: #000000; }
+        
+        .divider { 
+            margin: 25px 0; 
+            border: 0; 
+            border-top: 1px solid #e2e8f0; 
+            position: relative;
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Pré-Conselho</h2>
+    <div class="brand-header">
+        <h2>Pré-Conselho</h2>
+        <p>Sistema de Avaliação Escolar</p>
+    </div>
     
     <form id="formLogin">
-        <label>E-mail:</label>
-        <input type="email" id="loginEmail" required>
+        <label>E-mail</label>
+        <input type="email" id="loginEmail" placeholder="seu@email.com" required>
         
-        <label>Senha:</label>
-        <input type="password" id="loginSenha" required>
+        <label>Senha</label>
+        <input type="password" id="loginSenha" placeholder="••••••••" required>
         
-        <button type="submit" class="btn-blue">Entrar</button>
+        <button type="submit" class="btn-blue">Entrar no Sistema</button>
     </form>
 
-    <hr>
+    <div class="divider"></div>
 
     <h3>Criar Conta</h3>
     <form id="formCadastro">
-        <label>Nome Completo:</label>
-        <input type="text" id="cadNome" required>
+        <label>Nome Completo</label>
+        <input type="text" id="cadNome" placeholder="Nome do Usuário" required>
         
-        <label>E-mail:</label>
-        <input type="email" id="cadEmail" required>
+        <label>E-mail</label>
+        <input type="email" id="cadEmail" placeholder="seu@email.com" required>
         
-        <label>Senha:</label>
-        <input type="password" id="cadSenha" required>
+        <label>Senha</label>
+        <input type="password" id="cadSenha" placeholder="••••••••" required>
         
-        <label>Perfil:</label>
+        <label>Perfil</label>
         <select id="cadTipo">
             <option value="Professor">Professor</option>
             <option value="Admin">Administrador</option>
         </select>
         
-        <button type="submit" class="btn-dark">Cadastrar</button>
+        <button type="submit" class="btn-black">Cadastrar Usuário</button>
     </form>
 </div>
 

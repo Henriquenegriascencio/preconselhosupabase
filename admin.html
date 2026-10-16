@@ -3,31 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Administrador</title>
+    <title>Painel do Administrador - Pré-Conselho</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; }
-        .container { max-width: 700px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1, h2, h3 { color: #1e293b; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-        .pergunta-box { border: 1px solid #e2e8f0; padding: 10px; margin-top: 10px; border-radius: 4px; background: #f1f5f9; }
-        button { background: #2563eb; color: white; border: none; padding: 10px 15px; margin-top: 15px; border-radius: 4px; cursor: pointer; }
-        .btn-add { background: #10b981; }
-        .btn-logout { background: #ef4444; float: right; }
-        .card-secao { border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin-bottom: 25px; background: #fafafa; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; padding-bottom: 40px; }
+        
+        .header { 
+            background: #0f172a; 
+            color: #ffffff; 
+            padding: 16px 24px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .header h1 { font-size: 20px; font-weight: 700; color: #ffffff; }
+        
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        
+        .card-secao { 
+            background: #ffffff; 
+            padding: 24px; 
+            border-radius: 10px; 
+            margin-bottom: 24px; 
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .card-secao h2 { 
+            font-size: 18px; 
+            color: #1e3a8a; 
+            margin-bottom: 16px; 
+            padding-bottom: 8px; 
+            border-bottom: 2px solid #eff6ff; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 13px; color: #334155; }
+        input, select { 
+            width: 100%; 
+            padding: 10px 12px; 
+            margin-top: 6px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            font-size: 14px;
+            background-color: #f8fafc;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #1d4ed8;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+        }
+
+        .pergunta-box { 
+            border: 1px solid #cbd5e1; 
+            padding: 14px; 
+            margin-top: 12px; 
+            border-radius: 6px; 
+            background: #f8fafc; 
+        }
+
+        button { 
+            background: #1d4ed8; 
+            color: #ffffff; 
+            border: none; 
+            padding: 10px 18px; 
+            margin-top: 16px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        button:hover { background: #1e40af; }
+
+        .btn-add { background: #0f172a; }
+        .btn-add:hover { background: #000000; }
+
+        .btn-logout { background: #dc2626; padding: 8px 16px; font-size: 13px; margin-top: 0; }
+        .btn-logout:hover { background: #b91c1c; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <button class="btn-logout" onclick="logout()">Sair</button>
+<div class="header">
     <h1>Painel do Administrador</h1>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+</div>
+
+<div class="container">
     
     <!-- SEÇÃO 1: CADASTRO DE TURMAS -->
     <div class="card-secao">
         <h2>1. Cadastrar Nova Turma</h2>
         <form id="formTurma">
-            <label>Nome da Turma:</label>
+            <label>Nome da Turma</label>
             <input type="text" id="nomeTurma" required placeholder="Ex: 1º Ano A, 2º Ano B...">
             <button type="submit" class="btn-add">Cadastrar Turma</button>
         </form>
@@ -37,7 +109,7 @@
     <div class="card-secao">
         <h2>2. Cadastrar Nova Matéria</h2>
         <form id="formMateria">
-            <label>Nome da Matéria:</label>
+            <label>Nome da Matéria</label>
             <input type="text" id="nomeMateria" required placeholder="Ex: Matemática, Português...">
             <button type="submit" class="btn-add">Cadastrar Matéria</button>
         </form>
@@ -47,12 +119,12 @@
     <div class="card-secao">
         <h2>3. Vincular Professor à Turma</h2>
         <form id="formVinculo">
-            <label>Selecione o Professor:</label>
+            <label>Selecione o Professor</label>
             <select id="vinculoProfId" required>
                 <option value="">-- Carregando professores... --</option>
             </select>
 
-            <label>Selecione a Turma:</label>
+            <label>Selecione a Turma</label>
             <select id="vinculoTurmaId" required>
                 <option value="">-- Carregando turmas... --</option>
             </select>
@@ -65,28 +137,28 @@
     <div class="card-secao">
         <h2>4. Criar Nova Ficha de Avaliação</h2>
         <form id="formFicha">
-            <label>Título da Ficha:</label>
+            <label>Título da Ficha</label>
             <input type="text" id="titulo" required placeholder="Ex: Pré-Conselho 1º Trimestre">
 
-            <label>Selecione a Turma:</label>
+            <label>Selecione a Turma</label>
             <select id="turmaId" required>
                 <option value="">-- Carregando turmas... --</option>
             </select>
 
-            <label>Selecione a Matéria:</label>
+            <label>Selecione a Matéria</label>
             <select id="materiaId" required>
                 <option value="">-- Carregando matérias... --</option>
             </select>
 
-            <label>Data Limite:</label>
+            <label>Data Limite</label>
             <input type="date" id="dataLimite">
 
-            <h3>Perguntas</h3>
+            <h3 style="margin-top: 20px; font-size: 16px;">Perguntas da Ficha</h3>
             <div id="containerPerguntas"></div>
             <button type="button" class="btn-add" onclick="adicionarPergunta()">+ Adicionar Pergunta</button>
 
             <br><br>
-            <button type="submit">Salvar e Enviar Ficha</button>
+            <button type="submit" style="width: 100%; padding: 12px;">Salvar e Publicar Ficha</button>
         </form>
     </div>
 </div>
@@ -239,9 +311,9 @@
         div.className = 'pergunta-box';
         div.id = `pergunta_${contadorPerguntas}`;
         div.innerHTML = `
-            <label>Pergunta ${contadorPerguntas}:</label>
+            <label>Pergunta ${contadorPerguntas}</label>
             <input type="text" class="texto-pergunta" required placeholder="Ex: A turma demonstra engajamento?">
-            <label>Categoria:</label>
+            <label>Categoria</label>
             <input type="text" class="categoria-pergunta" placeholder="Geral / Comportamento / Desempenho">
         `;
         document.getElementById('containerPerguntas').appendChild(div);
