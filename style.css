@@ -83,3 +83,14 @@ button:hover {
     border-radius: 6px;
     margin-bottom: 10px;
 }
+
+#btnTema {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+#btnTema svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
