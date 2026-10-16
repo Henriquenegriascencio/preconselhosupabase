@@ -162,7 +162,6 @@
             align-items: center;
         }
 
-        /* CAIXA DE GRUPO POR PROFESSOR NO DESEMPENHO */
         .bloco-professor {
             background: var(--bg-box);
             border: 1px solid var(--border-input);
@@ -278,7 +277,7 @@
         </div>
     </div>
 
-    <!-- ABA 2: TURMAS (CADASTRO E LISTAGEM) -->
+    <!-- ABA 2: TURMAS -->
     <div id="aba-turmas" class="aba-conteudo">
         <div class="card">
             <h2>Cadastrar Nova Turma</h2>
@@ -297,7 +296,7 @@
         </div>
     </div>
 
-    <!-- ABA 3: MATÉRIAS (CADASTRO E LISTAGEM) -->
+    <!-- ABA 3: MATÉRIAS -->
     <div id="aba-materias" class="aba-conteudo">
         <div class="card">
             <h2>Cadastrar Nova Matéria</h2>
@@ -316,10 +315,10 @@
         </div>
     </div>
 
-    <!-- ABA 4: VÍNCULOS DE PROFESSORES -->
+    <!-- ABA 4: VÍNCULOS -->
     <div id="aba-vinculos" class="aba-conteudo">
         <div class="card">
-            <h2>Vincular Professor a uma Turma</h2>
+            <h2>Vincular Professor a uma Turma e Matéria</h2>
             <form id="formVinculo">
                 <label>Selecione o Professor</label>
                 <select id="vinculoProfId" required><option value="">-- Carregando professores... --</option></select>
@@ -327,12 +326,15 @@
                 <label>Selecione a Turma</label>
                 <select id="vinculoTurmaId" required><option value="">-- Carregando turmas... --</option></select>
 
+                <label>Selecione a Matéria</label>
+                <select id="vinculoMateriaId" required><option value="">-- Carregando matérias... --</option></select>
+
                 <button type="submit" class="btn-primary">Criar Vínculo</button>
             </form>
         </div>
     </div>
 
-    <!-- ABA 5: DESEMPENHO GERAL DA TURMA -->
+    <!-- ABA 5: DESEMPENHO GERAL -->
     <div id="aba-desempenho" class="aba-conteudo">
         <div class="card">
             <h2>Painel de Desempenho Geral por Ficha</h2>
@@ -347,12 +349,10 @@
         </div>
     </div>
 
-    <!-- ABA 6: CONFIGURAÇÕES DA CONTA -->
+    <!-- ABA 6: CONFIGURAÇÕES -->
     <div id="aba-config" class="aba-conteudo">
         <div class="card">
             <h2>Configurações da Conta</h2>
-            <p style="margin-bottom: 15px; font-size: 14px; color: var(--text-muted);">Informações da conta de administrador em uso.</p>
-            
             <label>Nome Completo</label>
             <input type="text" id="configNome" readonly>
             
@@ -382,13 +382,8 @@
         const iconeEl = document.getElementById('iconeTema');
         const textoEl = document.getElementById('textoTema');
         if (iconeEl && textoEl) {
-            if (tema === 'dark') {
-                iconeEl.innerHTML = iconeSol;
-                textoEl.textContent = 'Modo Claro';
-            } else {
-                iconeEl.innerHTML = iconeLua;
-                textoEl.textContent = 'Modo Escuro';
-            }
+            iconeEl.innerHTML = tema === 'dark' ? iconeSol : iconeLua;
+            textoEl.textContent = tema === 'dark' ? 'Modo Claro' : 'Modo Escuro';
         }
     }
 
@@ -446,7 +441,7 @@
                 `).join('');
             } else {
                 options = '<option value="">Nenhuma turma cadastrada</option>';
-                containerLista.innerHTML = '<p style="color: var(--text-muted);">Nenhuma turma cadastrada no momento.</p>';
+                containerLista.innerHTML = '<p style="color: var(--text-muted);">Nenhuma turma cadastrada.</p>';
             }
 
             selectFicha.innerHTML = options;
@@ -459,6 +454,7 @@
             const res = await fetch(`${API_URL}/api/admin/materias`);
             const materias = await res.json();
             const select = document.getElementById('materiaId');
+            const selectVinculo = document.getElementById('vinculoMateriaId');
             const containerLista = document.getElementById('listaMateriasCadastradas');
 
             let options = '<option value="">-- Selecione uma Matéria --</option>';
@@ -472,9 +468,10 @@
                 `).join('');
             } else {
                 options = '<option value="">Nenhuma matéria cadastrada</option>';
-                containerLista.innerHTML = '<p style="color: var(--text-muted);">Nenhuma matéria cadastrada no momento.</p>';
+                containerLista.innerHTML = '<p style="color: var(--text-muted);">Nenhuma matéria cadastrada.</p>';
             }
             select.innerHTML = options;
+            selectVinculo.innerHTML = options;
         } catch (err) { console.error(err); }
     }
 
@@ -495,20 +492,14 @@
 
     async function carregarFichasParaDesempenho() {
         try {
-            const res = await fetch(`${API_URL}/api/professor/fichas`);
+            const res = await fetch(`${API_URL}/api/admin/fichas`);
             const fichas = await res.json();
             const select = document.getElementById('selectFichaDesempenho');
             select.innerHTML = '<option value="">-- Selecione uma Ficha --</option>';
             
             if (fichas.length > 0) {
-                // Tenta buscar o nome da turma para cada ficha
-                const resTurmas = await fetch(`${API_URL}/api/admin/turmas`);
-                const turmas = await resTurmas.json();
-
                 fichas.forEach(f => {
-                    const turmaEncontrada = turmas.find(t => t.id === f.turma_id);
-                    const nomeTurma = turmaEncontrada ? turmaEncontrada.nome : `ID ${f.turma_id}`;
-                    
+                    const nomeTurma = f.turmas?.nome || `Turma ID ${f.turma_id}`;
                     const opt = document.createElement('option');
                     opt.value = f.id;
                     opt.textContent = `${f.titulo} - Turma: ${nomeTurma}`;
@@ -536,7 +527,6 @@
                 return;
             }
 
-            // AGRUPAMENTO DE RESPOSTAS POR PROFESSOR
             const agrupadoPorProfessor = {};
             respostas.forEach(r => {
                 if (!agrupadoPorProfessor[r.professor_nome]) {
@@ -574,7 +564,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nome })
         });
-        if (res.ok) { alert('Turma cadastrada com sucesso!'); document.getElementById('nomeTurma').value = ''; carregarTurmas(); }
+        if (res.ok) { alert('Turma cadastrada!'); document.getElementById('nomeTurma').value = ''; carregarTurmas(); }
     });
 
     document.getElementById('formMateria').addEventListener('submit', async (e) => {
@@ -585,19 +575,21 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nome })
         });
-        if (res.ok) { alert('Matéria cadastrada com sucesso!'); document.getElementById('nomeMateria').value = ''; carregarMaterias(); }
+        if (res.ok) { alert('Matéria cadastrada!'); document.getElementById('nomeMateria').value = ''; carregarMaterias(); }
     });
 
     document.getElementById('formVinculo').addEventListener('submit', async (e) => {
         e.preventDefault();
         const professor_id = parseInt(document.getElementById('vinculoProfId').value);
         const turma_id = parseInt(document.getElementById('vinculoTurmaId').value);
+        const materia_id = parseInt(document.getElementById('vinculoMateriaId').value);
+        
         const res = await fetch(`${API_URL}/api/admin/vincular-professor`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ professor_id, turma_id })
+            body: JSON.stringify({ professor_id, turma_id, materia_id })
         });
-        if (res.ok) { alert('Professor vinculado com sucesso!'); document.getElementById('formVinculo').reset(); }
+        if (res.ok) { alert('Vínculo criado!'); document.getElementById('formVinculo').reset(); }
     });
 
     function adicionarPergunta() {
@@ -631,7 +623,7 @@
             body: JSON.stringify({ titulo, turma_id, materia_id, data_limite, perguntas })
         });
 
-        if (res.ok) { alert('Ficha criada com sucesso!'); window.location.reload(); }
+        if (res.ok) { alert('Ficha salva!'); window.location.reload(); }
     });
 
     function logout() {
