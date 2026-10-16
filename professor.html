@@ -6,60 +6,103 @@
     <title>Área do Professor - Pré-Conselho</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; padding-bottom: 40px; }
-        
-        .header { 
-            background: #0f172a; 
-            color: #ffffff; 
-            padding: 16px 24px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-        .header h1 { font-size: 20px; font-weight: 700; color: #ffffff; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; padding-bottom: 40px; }
 
-        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
-        
-        .card { 
-            background: #ffffff; 
-            padding: 24px; 
-            border-radius: 10px; 
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        .topbar {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
+        .topbar-brand { font-size: 20px; font-weight: 700; color: #ffffff; }
+        .topbar-brand span { color: #3b82f6; }
 
-        label { display: block; margin-top: 10px; font-weight: 600; font-size: 14px; color: #334155; }
-        select, textarea { 
-            width: 100%; 
-            margin-top: 8px; 
-            padding: 10px 12px; 
-            border: 1px solid #cbd5e1;
-            border-radius: 6px; 
+        .topbar-nav { display: flex; gap: 8px; height: 100%; }
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 0 16px;
+            height: 100%;
             font-size: 14px;
-            background-color: #f8fafc;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-btn:hover { color: #ffffff; background: rgba(255,255,255,0.05); }
+        .nav-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+        .topbar-user { display: flex; align-items: center; gap: 16px; }
+        .user-info { font-size: 13px; text-align: right; color: #cbd5e1; }
+        .user-info strong { display: block; color: #ffffff; font-size: 14px; }
+
+        .btn-logout {
+            background: #dc2626;
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-logout:hover { background: #b91c1c; }
+
+        .container { max-width: 850px; margin: 30px auto; padding: 0 20px; }
+
+        .aba-conteudo { display: none; }
+        .aba-conteudo.active { display: block; }
+
+        .card {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        .card h2 { font-size: 20px; color: #1e3a8a; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #eff6ff; }
+
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 14px; color: #334155; }
+        select, textarea, input {
+            width: 100%;
+            margin-top: 8px;
+            padding: 11px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #f8fafc;
             font-family: inherit;
         }
         select:focus, textarea:focus {
             outline: none;
-            border-color: #1d4ed8;
-            background-color: #ffffff;
-            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+            border-color: #2563eb;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
         textarea { min-height: 80px; resize: vertical; }
 
-        .questao { 
+        .questao {
             background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
-            padding: 18px; 
-            margin-bottom: 20px; 
+            padding: 18px;
+            margin-bottom: 20px;
         }
         .questao p { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
+        
         .categoria-tag {
             display: inline-block;
-            background: #e0e7ff;
+            background: #dbeafe;
             color: #1d4ed8;
             font-size: 12px;
             font-weight: 600;
@@ -68,44 +111,90 @@
             margin-left: 6px;
         }
 
-        button { 
-            background: #1d4ed8; 
-            color: #ffffff; 
-            border: none; 
-            padding: 12px 20px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 15px; 
+        button.btn-submit {
+            background: #1d4ed8;
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
             font-weight: 600;
             width: 100%;
             margin-top: 15px;
-            transition: background-color 0.2s ease;
+            transition: background 0.2s;
         }
-        button:hover { background: #1e40af; }
-
-        .btn-logout { background: #dc2626; padding: 8px 16px; font-size: 13px; width: auto; margin-top: 0; }
-        .btn-logout:hover { background: #b91c1c; }
+        button.btn-submit:hover { background: #1e40af; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>Painel do Professor</h1>
-    <button class="btn-logout" onclick="logout()">Sair</button>
+<div class="topbar">
+    <div class="topbar-brand">Pré-Conselho <span>Docente</span></div>
+
+    <nav class="topbar-nav">
+        <button class="nav-btn active" onclick="mudarAba('fichas', this)">📝 Responder Fichas</button>
+        <button class="nav-btn" onclick="mudarAba('turmas', this)">🏫 Minhas Turmas</button>
+        <button class="nav-btn" onclick="mudarAba('config', this)">⚙️ Configurações</button>
+    </nav>
+
+    <div class="topbar-user">
+        <div class="user-info">
+            <strong id="profNome">Professor</strong>
+            <span>Docente</span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
 </div>
 
 <div class="container">
-    <div class="card">
-        <label>Selecione a Ficha de Avaliação:</label>
-        <select id="selectFichas" onchange="carregarPerguntas()">
-            <option value="">-- Selecione uma Ficha --</option>
-        </select>
 
-        <form id="formRespostas" style="display:none; margin-top: 25px;">
-            <div id="containerQuestoes"></div>
-            <button type="submit">Enviar Respostas do Pré-Conselho</button>
-        </form>
+    <!-- ABA 1: FICHAS PARA RESPONDER -->
+    <div id="aba-fichas" class="aba-conteudo active">
+        <div class="card">
+            <h2>Fichas de Avaliação Disponíveis</h2>
+            <label>Selecione uma Ficha para Preencher:</label>
+            <select id="selectFichas" onchange="carregarPerguntas()">
+                <option value="">-- Selecione uma Ficha --</option>
+            </select>
+
+            <form id="formRespostas" style="display:none; margin-top: 25px;">
+                <div id="containerQuestoes"></div>
+                <button type="submit" class="btn-submit">Enviar Respostas do Pré-Conselho</button>
+            </form>
+        </div>
     </div>
+
+    <!-- ABA 2: MINHAS TURMAS E ALUNOS -->
+    <div id="aba-turmas" class="aba-conteudo">
+        <div class="card">
+            <h2>Minhas Turmas Associadas</h2>
+            <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">
+                Abaixo estão as turmas às quais foi vinculado pelo administrador do sistema.
+            </p>
+            <div id="listaMinhasTurmas">
+                <p style="color: #64748b; font-style: italic;">Carregando suas turmas...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 3: CONFIGURAÇÕES DA CONTA -->
+    <div id="aba-config" class="aba-conteudo">
+        <div class="card">
+            <h2>Configurações da Conta</h2>
+            <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">Dados do seu perfil de professor.</p>
+            
+            <label>Nome Completo</label>
+            <input type="text" id="configNome" readonly>
+
+            <label>E-mail registrado</label>
+            <input type="text" id="configEmail" readonly>
+
+            <label>Perfil de Acesso</label>
+            <input type="text" value="Professor / Avaliador" readonly>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -116,18 +205,30 @@
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (!usuario) {
         window.location.href = 'index.html';
+    } else {
+        document.getElementById('profNome').textContent = usuario.nome;
+        document.getElementById('configNome').value = usuario.nome;
+        document.getElementById('configEmail').value = usuario.email;
+    }
+
+    function mudarAba(idAba, elBotao) {
+        document.querySelectorAll('.aba-conteudo').forEach(aba => aba.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById(`aba-${idAba}`).classList.add('active');
+        elBotao.classList.add('active');
     }
 
     async function carregarFichas() {
         try {
             const res = await fetch(`${API_URL}/api/professor/fichas/${usuario.id}`);
             const fichas = await res.json();
-
             const select = document.getElementById('selectFichas');
             select.innerHTML = '<option value="">-- Selecione uma Ficha --</option>';
 
             if (fichas.length === 0) {
                 select.innerHTML = '<option value="">Nenhuma ficha disponível para suas turmas</option>';
+                document.getElementById('listaMinhasTurmas').innerHTML = '<p>Nenhuma turma vinculada a este perfil.</p>';
                 return;
             }
 
@@ -137,9 +238,16 @@
                 opt.textContent = `${f.titulo} (Turma ID: ${f.turma_id})`;
                 select.appendChild(opt);
             });
-        } catch (err) {
-            alert('Erro ao carregar fichas.');
-        }
+
+            // Preenche lista simples na aba 'Minhas Turmas'
+            const turmasUnicas = [...new Set(fichas.map(f => f.turma_id))];
+            document.getElementById('listaMinhasTurmas').innerHTML = turmasUnicas.map(id => `
+                <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:12px; border-radius:6px; margin-bottom:8px;">
+                    <strong>Turma ID: ${id}</strong>
+                </div>
+            `).join('');
+
+        } catch (err) { alert('Erro ao carregar fichas.'); }
     }
 
     async function carregarPerguntas() {
@@ -164,23 +272,20 @@
                 div.innerHTML = `
                     <p>${p.texto_pergunta} <span class="categoria-tag">${p.categoria}</span></p>
                     <label>Resposta:</label>
-                    <textarea class="resposta" placeholder="Digite sua resposta técnica..." required></textarea>
+                    <textarea class="resposta" placeholder="Digite sua avaliação técnica..." required></textarea>
                     <label>Anotações Adicionais (opcional):</label>
-                    <textarea class="anotacoes" placeholder="Observações específicas sobre alunos ou dinâmica..."></textarea>
+                    <textarea class="anotacoes" placeholder="Observações sobre o desempenho ou comportamento..."></textarea>
                 `;
                 container.appendChild(div);
             });
 
             form.style.display = 'block';
-        } catch (err) {
-            alert('Erro ao carregar perguntas.');
-        }
+        } catch (err) { alert('Erro ao carregar perguntas.'); }
     }
 
     document.getElementById('formRespostas').addEventListener('submit', async (e) => {
         e.preventDefault();
         const ficha_id = document.getElementById('selectFichas').value;
-
         const questoes = document.querySelectorAll('.questao');
         const respostas = Array.from(questoes).map(q => ({
             pergunta_id: parseInt(q.dataset.perguntaId),
@@ -188,25 +293,17 @@
             anotacoes: q.querySelector('.anotacoes').value
         }));
 
-        try {
-            const res = await fetch(`${API_URL}/api/professor/respostas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ficha_id: parseInt(ficha_id),
-                    professor_id: usuario.id,
-                    respostas
-                })
-            });
+        const res = await fetch(`${API_URL}/api/professor/respostas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ficha_id: parseInt(ficha_id), professor_id: usuario.id, respostas })
+        });
 
-            if (res.ok) {
-                alert('Respostas enviadas com sucesso!');
-                window.location.reload();
-            } else {
-                alert('Erro ao enviar respostas.');
-            }
-        } catch (err) {
-            alert('Erro na conexão.');
+        if (res.ok) {
+            alert('Respostas enviadas com sucesso!');
+            window.location.reload();
+        } else {
+            alert('Erro ao enviar respostas.');
         }
     });
 

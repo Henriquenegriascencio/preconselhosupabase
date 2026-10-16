@@ -6,161 +6,225 @@
     <title>Painel do Administrador - Pré-Conselho</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; padding-bottom: 40px; }
-        
-        .header { 
-            background: #0f172a; 
-            color: #ffffff; 
-            padding: 16px 24px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-        .header h1 { font-size: 20px; font-weight: 700; color: #ffffff; }
-        
-        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
-        
-        .card-secao { 
-            background: #ffffff; 
-            padding: 24px; 
-            border-radius: 10px; 
-            margin-bottom: 24px; 
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .card-secao h2 { 
-            font-size: 18px; 
-            color: #1e3a8a; 
-            margin-bottom: 16px; 
-            padding-bottom: 8px; 
-            border-bottom: 2px solid #eff6ff; 
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; padding-bottom: 40px; }
 
-        label { display: block; margin-top: 12px; font-weight: 600; font-size: 13px; color: #334155; }
-        input, select { 
-            width: 100%; 
-            padding: 10px 12px; 
-            margin-top: 6px; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 6px; 
+        /* TOPBAR PRINCIPAL */
+        .topbar {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-brand { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px; }
+        .topbar-brand span { color: #3b82f6; }
+        
+        .topbar-nav { display: flex; gap: 8px; height: 100%; }
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 0 16px;
+            height: 100%;
             font-size: 14px;
-            background-color: #f8fafc;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-btn:hover { color: #ffffff; background: rgba(255,255,255,0.05); }
+        .nav-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+        .topbar-user { display: flex; align-items: center; gap: 16px; }
+        .user-info { font-size: 13px; text-align: right; color: #cbd5e1; }
+        .user-info strong { display: block; color: #ffffff; font-size: 14px; }
+
+        .btn-logout {
+            background: #dc2626;
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-logout:hover { background: #b91c1c; }
+
+        /* CONTEÚDO PRINCIPAL */
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+
+        .aba-conteudo { display: none; }
+        .aba-conteudo.active { display: block; }
+
+        .card {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        .card h2 { font-size: 20px; color: #1e3a8a; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #eff6ff; }
+
+        label { display: block; margin-top: 14px; font-weight: 600; font-size: 13px; color: #334155; }
+        input, select {
+            width: 100%;
+            padding: 11px 14px;
+            margin-top: 6px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #f8fafc;
+            color: #0f172a;
         }
         input:focus, select:focus {
             outline: none;
-            border-color: #1d4ed8;
-            background-color: #ffffff;
-            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+            border-color: #2563eb;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
-        .pergunta-box { 
-            border: 1px solid #cbd5e1; 
-            padding: 14px; 
-            margin-top: 12px; 
-            border-radius: 6px; 
-            background: #f8fafc; 
+        .pergunta-box {
+            border: 1px solid #cbd5e1;
+            padding: 16px;
+            margin-top: 14px;
+            border-radius: 8px;
+            background: #f8fafc;
         }
 
-        button { 
-            background: #1d4ed8; 
-            color: #ffffff; 
-            border: none; 
-            padding: 10px 18px; 
-            margin-top: 16px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: 600;
+        button.btn-primary {
+            background: #1d4ed8;
+            color: #ffffff;
+            border: none;
+            padding: 11px 20px;
+            margin-top: 18px;
+            border-radius: 6px;
             font-size: 14px;
-            transition: background-color 0.2s ease;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
         }
-        button:hover { background: #1e40af; }
+        button.btn-primary:hover { background: #1e40af; }
 
-        .btn-add { background: #0f172a; }
-        .btn-add:hover { background: #000000; }
-
-        .btn-logout { background: #dc2626; padding: 8px 16px; font-size: 13px; margin-top: 0; }
-        .btn-logout:hover { background: #b91c1c; }
+        .btn-dark { background: #0f172a; }
+        .btn-dark:hover { background: #000000; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>Painel do Administrador</h1>
-    <button class="btn-logout" onclick="logout()">Sair</button>
+<div class="topbar">
+    <div class="topbar-brand">Pré-Conselho <span>Admin</span></div>
+    
+    <nav class="topbar-nav">
+        <button class="nav-btn active" onclick="mudarAba('fichas', this)">📝 Fichas</button>
+        <button class="nav-btn" onclick="mudarAba('turmas', this)">🏫 Turmas</button>
+        <button class="nav-btn" onclick="mudarAba('materias', this)">📚 Matérias</button>
+        <button class="nav-btn" onclick="mudarAba('vinculos', this)">👨‍🏫 Professores</button>
+        <button class="nav-btn" onclick="mudarAba('config', this)">⚙️ Configurações</button>
+    </nav>
+
+    <div class="topbar-user">
+        <div class="user-info">
+            <strong id="adminNome">Administrador</strong>
+            <span>Painel de Gestão</span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
 </div>
 
 <div class="container">
-    
-    <!-- SEÇÃO 1: CADASTRO DE TURMAS -->
-    <div class="card-secao">
-        <h2>1. Cadastrar Nova Turma</h2>
-        <form id="formTurma">
-            <label>Nome da Turma</label>
-            <input type="text" id="nomeTurma" required placeholder="Ex: 1º Ano A, 2º Ano B...">
-            <button type="submit" class="btn-add">Cadastrar Turma</button>
-        </form>
+
+    <!-- ABA 1: FICHAS -->
+    <div id="aba-fichas" class="aba-conteudo active">
+        <div class="card">
+            <h2>Criar Nova Ficha de Avaliação</h2>
+            <form id="formFicha">
+                <label>Título da Ficha</label>
+                <input type="text" id="titulo" required placeholder="Ex: Pré-Conselho 1º Trimestre">
+
+                <label>Selecione a Turma</label>
+                <select id="turmaId" required><option value="">-- Carregando turmas... --</option></select>
+
+                <label>Selecione a Matéria</label>
+                <select id="materiaId" required><option value="">-- Carregando matérias... --</option></select>
+
+                <label>Data Limite para Resposta</label>
+                <input type="date" id="dataLimite">
+
+                <h3 style="margin-top: 24px; font-size: 16px;">Perguntas</h3>
+                <div id="containerPerguntas"></div>
+                <button type="button" class="btn-primary btn-dark" onclick="adicionarPergunta()">+ Adicionar Pergunta</button>
+
+                <br><br>
+                <button type="submit" class="btn-primary" style="width:100%;">Salvar e Publicar Ficha</button>
+            </form>
+        </div>
     </div>
 
-    <!-- SEÇÃO 2: CADASTRO DE MATÉRIAS -->
-    <div class="card-secao">
-        <h2>2. Cadastrar Nova Matéria</h2>
-        <form id="formMateria">
-            <label>Nome da Matéria</label>
-            <input type="text" id="nomeMateria" required placeholder="Ex: Matemática, Português...">
-            <button type="submit" class="btn-add">Cadastrar Matéria</button>
-        </form>
+    <!-- ABA 2: TURMAS -->
+    <div id="aba-turmas" class="aba-conteudo">
+        <div class="card">
+            <h2>Cadastrar Nova Turma</h2>
+            <form id="formTurma">
+                <label>Nome da Turma</label>
+                <input type="text" id="nomeTurma" required placeholder="Ex: 1º Ano A, 2º Ano B...">
+                <button type="submit" class="btn-primary">Cadastrar Turma</button>
+            </form>
+        </div>
     </div>
 
-    <!-- SEÇÃO 3: VINCULAR PROFESSOR À TURMA -->
-    <div class="card-secao">
-        <h2>3. Vincular Professor à Turma</h2>
-        <form id="formVinculo">
-            <label>Selecione o Professor</label>
-            <select id="vinculoProfId" required>
-                <option value="">-- Carregando professores... --</option>
-            </select>
-
-            <label>Selecione a Turma</label>
-            <select id="vinculoTurmaId" required>
-                <option value="">-- Carregando turmas... --</option>
-            </select>
-
-            <button type="submit" class="btn-add">Vincular Professor</button>
-        </form>
+    <!-- ABA 3: MATÉRIAS -->
+    <div id="aba-materias" class="aba-conteudo">
+        <div class="card">
+            <h2>Cadastrar Nova Matéria</h2>
+            <form id="formMateria">
+                <label>Nome da Matéria</label>
+                <input type="text" id="nomeMateria" required placeholder="Ex: Matemática, Português...">
+                <button type="submit" class="btn-primary">Cadastrar Matéria</button>
+            </form>
+        </div>
     </div>
 
-    <!-- SEÇÃO 4: CRIAÇÃO DE FICHAS -->
-    <div class="card-secao">
-        <h2>4. Criar Nova Ficha de Avaliação</h2>
-        <form id="formFicha">
-            <label>Título da Ficha</label>
-            <input type="text" id="titulo" required placeholder="Ex: Pré-Conselho 1º Trimestre">
+    <!-- ABA 4: VÍNCULOS DE PROFESSORES -->
+    <div id="aba-vinculos" class="aba-conteudo">
+        <div class="card">
+            <h2>Vincular Professor a uma Turma</h2>
+            <form id="formVinculo">
+                <label>Selecione o Professor</label>
+                <select id="vinculoProfId" required><option value="">-- Carregando professores... --</option></select>
 
-            <label>Selecione a Turma</label>
-            <select id="turmaId" required>
-                <option value="">-- Carregando turmas... --</option>
-            </select>
+                <label>Selecione a Turma</label>
+                <select id="vinculoTurmaId" required><option value="">-- Carregando turmas... --</option></select>
 
-            <label>Selecione a Matéria</label>
-            <select id="materiaId" required>
-                <option value="">-- Carregando matérias... --</option>
-            </select>
-
-            <label>Data Limite</label>
-            <input type="date" id="dataLimite">
-
-            <h3 style="margin-top: 20px; font-size: 16px;">Perguntas da Ficha</h3>
-            <div id="containerPerguntas"></div>
-            <button type="button" class="btn-add" onclick="adicionarPergunta()">+ Adicionar Pergunta</button>
-
-            <br><br>
-            <button type="submit" style="width: 100%; padding: 12px;">Salvar e Publicar Ficha</button>
-        </form>
+                <button type="submit" class="btn-primary">Criar Vínculo</button>
+            </form>
+        </div>
     </div>
+
+    <!-- ABA 5: CONFIGURAÇÕES DA CONTA -->
+    <div id="aba-config" class="aba-conteudo">
+        <div class="card">
+            <h2>Configurações do Perfil</h2>
+            <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">Informações da sua conta de administrador.</p>
+            <label>Nome Completo</label>
+            <input type="text" id="configNome" readonly>
+            
+            <label>E-mail registrado</label>
+            <input type="text" id="configEmail" readonly>
+
+            <label>Tipo de Acesso</label>
+            <input type="text" value="Administrador do Sistema" readonly>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -168,148 +232,111 @@
         ? 'http://localhost:3000' 
         : 'https://preconselhosupabase.onrender.com';
 
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (!usuario || usuario.tipo !== 'Admin') {
+        window.location.href = 'index.html';
+    } else {
+        document.getElementById('adminNome').textContent = usuario.nome;
+        document.getElementById('configNome').value = usuario.nome;
+        document.getElementById('configEmail').value = usuario.email;
+    }
+
     let contadorPerguntas = 0;
+
+    function mudarAba(idAba, elBotao) {
+        document.querySelectorAll('.aba-conteudo').forEach(aba => aba.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById(`aba-${idAba}`).classList.add('active');
+        elBotao.classList.add('active');
+    }
 
     async function carregarTurmas() {
         try {
             const res = await fetch(`${API_URL}/api/admin/turmas`);
             const turmas = await res.json();
-
             const selectFicha = document.getElementById('turmaId');
             const selectVinculo = document.getElementById('vinculoTurmaId');
 
             let options = '<option value="">-- Selecione uma Turma --</option>';
-            if (turmas.length === 0) {
-                options = '<option value="">Nenhuma turma cadastrada</option>';
+            if (turmas.length > 0) {
+                turmas.forEach(t => options += `<option value="${t.id}">${t.nome} (ID: ${t.id})</option>`);
             } else {
-                turmas.forEach(t => {
-                    options += `<option value="${t.id}">${t.nome} (ID: ${t.id})</option>`;
-                });
+                options = '<option value="">Nenhuma turma cadastrada</option>';
             }
-
             selectFicha.innerHTML = options;
             selectVinculo.innerHTML = options;
-        } catch (err) {
-            console.error('Erro ao carregar turmas:', err);
-        }
+        } catch (err) { console.error(err); }
     }
 
     async function carregarMaterias() {
         try {
             const res = await fetch(`${API_URL}/api/admin/materias`);
             const materias = await res.json();
-
             const select = document.getElementById('materiaId');
-            select.innerHTML = '<option value="">-- Selecione uma Matéria --</option>';
-
-            if (materias.length === 0) {
-                select.innerHTML = '<option value="">Nenhuma matéria cadastrada</option>';
-                return;
+            let options = '<option value="">-- Selecione uma Matéria --</option>';
+            if (materias.length > 0) {
+                materias.forEach(m => options += `<option value="${m.id}">${m.nome} (ID: ${m.id})</option>`);
+            } else {
+                options = '<option value="">Nenhuma matéria cadastrada</option>';
             }
-
-            materias.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.id;
-                opt.textContent = `${m.nome} (ID: ${m.id})`;
-                select.appendChild(opt);
-            });
-        } catch (err) {
-            console.error('Erro ao carregar matérias:', err);
-        }
+            select.innerHTML = options;
+        } catch (err) { console.error(err); }
     }
 
     async function carregarProfessores() {
         try {
             const res = await fetch(`${API_URL}/api/admin/professores`);
             const professores = await res.json();
-
             const select = document.getElementById('vinculoProfId');
-            select.innerHTML = '<option value="">-- Selecione um Professor --</option>';
-
-            if (professores.length === 0) {
-                select.innerHTML = '<option value="">Nenhum professor cadastrado</option>';
-                return;
+            let options = '<option value="">-- Selecione um Professor --</option>';
+            if (professores.length > 0) {
+                professores.forEach(p => options += `<option value="${p.id}">${p.nome} (${p.email})</option>`);
+            } else {
+                options = '<option value="">Nenhum professor cadastrado</option>';
             }
-
-            professores.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = `${p.nome} (${p.email})`;
-                select.appendChild(opt);
-            });
-        } catch (err) {
-            console.error('Erro ao carregar professores:', err);
-        }
+            select.innerHTML = options;
+        } catch (err) { console.error(err); }
     }
 
     document.getElementById('formTurma').addEventListener('submit', async (e) => {
         e.preventDefault();
         const nome = document.getElementById('nomeTurma').value;
-        try {
-            const response = await fetch(`${API_URL}/api/admin/turmas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome })
-            });
-
-            if (response.ok) {
-                alert(`Turma "${nome}" cadastrada com sucesso!`);
-                document.getElementById('nomeTurma').value = '';
-                carregarTurmas();
-            }
-        } catch (err) { alert('Erro ao conectar ao servidor.'); }
+        const res = await fetch(`${API_URL}/api/admin/turmas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome })
+        });
+        if (res.ok) { alert('Turma cadastrada com sucesso!'); document.getElementById('nomeTurma').value = ''; carregarTurmas(); }
     });
 
     document.getElementById('formMateria').addEventListener('submit', async (e) => {
         e.preventDefault();
         const nome = document.getElementById('nomeMateria').value;
-        try {
-            const response = await fetch(`${API_URL}/api/admin/materias`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome })
-            });
-
-            if (response.ok) {
-                alert(`Matéria "${nome}" cadastrada com sucesso!`);
-                document.getElementById('nomeMateria').value = '';
-                carregarMaterias();
-            }
-        } catch (err) { alert('Erro ao conectar ao servidor.'); }
+        const res = await fetch(`${API_URL}/api/admin/materias`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome })
+        });
+        if (res.ok) { alert('Matéria cadastrada com sucesso!'); document.getElementById('nomeMateria').value = ''; carregarMaterias(); }
     });
 
     document.getElementById('formVinculo').addEventListener('submit', async (e) => {
         e.preventDefault();
         const professor_id = parseInt(document.getElementById('vinculoProfId').value);
         const turma_id = parseInt(document.getElementById('vinculoTurmaId').value);
-
-        if (!professor_id || !turma_id) {
-            alert('Selecione o professor e a turma.');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_URL}/api/admin/vincular-professor`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ professor_id, turma_id })
-            });
-
-            if (response.ok) {
-                alert('Professor vinculado à turma com sucesso!');
-                document.getElementById('formVinculo').reset();
-            } else {
-                const data = await response.json();
-                alert('Erro: ' + data.error);
-            }
-        } catch (err) { alert('Erro ao conectar ao servidor.'); }
+        const res = await fetch(`${API_URL}/api/admin/vincular-professor`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ professor_id, turma_id })
+        });
+        if (res.ok) { alert('Professor vinculado com sucesso!'); document.getElementById('formVinculo').reset(); }
     });
 
     function adicionarPergunta() {
         contadorPerguntas++;
         const div = document.createElement('div');
         div.className = 'pergunta-box';
-        div.id = `pergunta_${contadorPerguntas}`;
         div.innerHTML = `
             <label>Pergunta ${contadorPerguntas}</label>
             <input type="text" class="texto-pergunta" required placeholder="Ex: A turma demonstra engajamento?">
@@ -325,30 +352,19 @@
         const turma_id = parseInt(document.getElementById('turmaId').value);
         const materia_id = parseInt(document.getElementById('materiaId').value);
         const data_limite = document.getElementById('dataLimite').value;
-
-        if (!turma_id || !materia_id) {
-            alert('Por favor, selecione uma turma e uma matéria.');
-            return;
-        }
-
         const perguntasBoxes = document.querySelectorAll('.pergunta-box');
         const perguntas = Array.from(perguntasBoxes).map(box => ({
             texto_pergunta: box.querySelector('.texto-pergunta').value,
             categoria: box.querySelector('.categoria-pergunta').value || 'Geral'
         }));
 
-        try {
-            const response = await fetch(`${API_URL}/api/admin/fichas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, turma_id, materia_id, data_limite, perguntas })
-            });
+        const res = await fetch(`${API_URL}/api/admin/fichas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ titulo, turma_id, materia_id, data_limite, perguntas })
+        });
 
-            if (response.ok) {
-                alert('Ficha criada com sucesso!');
-                window.location.reload();
-            }
-        } catch (err) { alert('Erro ao conectar ao servidor.'); }
+        if (res.ok) { alert('Ficha criada com sucesso!'); window.location.reload(); }
     });
 
     function logout() {
