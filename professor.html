@@ -6,8 +6,16 @@
     <title>Área do Professor - Pré-Conselho</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; padding-bottom: 40px; }
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: #f8fafc; 
+            color: #0f172a; 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
+        /* TOPBAR PRINCIPAL */
         .topbar {
             background: #0f172a;
             color: #ffffff;
@@ -16,15 +24,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
             position: sticky;
             top: 0;
             z-index: 100;
         }
-        .topbar-brand { font-size: 20px; font-weight: 700; color: #ffffff; }
+        .topbar-brand { font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px; }
         .topbar-brand span { color: #3b82f6; }
 
-        .topbar-nav { display: flex; gap: 8px; height: 100%; }
+        .topbar-nav { display: flex; gap: 4px; height: 100%; }
         .nav-btn {
             background: transparent;
             border: none;
@@ -37,26 +45,31 @@
             transition: all 0.2s ease;
             border-bottom: 3px solid transparent;
         }
-        .nav-btn:hover { color: #ffffff; background: rgba(255,255,255,0.05); }
+        .nav-btn:hover { color: #ffffff; background: rgba(255,255,255,0.04); }
         .nav-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
 
-        .topbar-user { display: flex; align-items: center; gap: 16px; }
-        .user-info { font-size: 13px; text-align: right; color: #cbd5e1; }
-        .user-info strong { display: block; color: #ffffff; font-size: 14px; }
+        .topbar-user { display: flex; align-items: center; gap: 12px; }
+        .user-info { font-size: 12px; text-align: right; color: #cbd5e1; margin-right: 4px; }
+        .user-info strong { display: block; color: #ffffff; font-size: 13px; }
 
-        .btn-logout {
-            background: #dc2626;
+        .btn-header {
+            background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
-            border: none;
-            padding: 8px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 7px 12px;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
         }
+        .btn-header:hover { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.3); }
+
+        .btn-logout { background: #dc2626; border: none; }
         .btn-logout:hover { background: #b91c1c; }
 
-        .container { max-width: 850px; margin: 30px auto; padding: 0 20px; }
+        /* CONTEÚDO PRINCIPAL */
+        .container { flex: 1; max-width: 850px; width: 100%; margin: 30px auto; padding: 0 20px; }
 
         .aba-conteudo { display: none; }
         .aba-conteudo.active { display: block; }
@@ -64,29 +77,30 @@
         .card {
             background: #ffffff;
             padding: 28px;
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             margin-bottom: 20px;
         }
-        .card h2 { font-size: 20px; color: #1e3a8a; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #eff6ff; }
+        .card h2 { font-size: 18px; color: #0f172a; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; font-weight: 700; }
 
-        label { display: block; margin-top: 12px; font-weight: 600; font-size: 14px; color: #334155; }
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 13px; color: #334155; }
         select, textarea, input {
             width: 100%;
-            margin-top: 8px;
-            padding: 11px 14px;
+            margin-top: 6px;
+            padding: 10px 12px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
             background: #f8fafc;
             font-family: inherit;
+            color: #0f172a;
         }
         select:focus, textarea:focus {
             outline: none;
             border-color: #2563eb;
             background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
 
         textarea { min-height: 80px; resize: vertical; }
@@ -94,21 +108,22 @@
         .questao {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-radius: 8px;
+            border-radius: 6px;
             padding: 18px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .questao p { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
         
         .categoria-tag {
             display: inline-block;
-            background: #dbeafe;
+            background: #e0e7ff;
             color: #1d4ed8;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             padding: 2px 8px;
             border-radius: 4px;
             margin-left: 6px;
+            text-transform: uppercase;
         }
 
         button.btn-submit {
@@ -118,24 +133,34 @@
             padding: 12px 20px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             width: 100%;
             margin-top: 15px;
             transition: background 0.2s;
         }
         button.btn-submit:hover { background: #1e40af; }
+
+        /* FOOTER */
+        .footer {
+            background: #0f172a;
+            color: #94a3b8;
+            text-align: center;
+            padding: 16px 20px;
+            font-size: 13px;
+            border-top: 1px solid #1e293b;
+            margin-top: auto;
+        }
     </style>
 </head>
 <body>
 
 <div class="topbar">
-    <div class="topbar-brand">Pré-Conselho <span>Docente</span></div>
+    <div class="topbar-brand">Pré-Conselho <span>| Área Docente</span></div>
 
     <nav class="topbar-nav">
-        <button class="nav-btn active" onclick="mudarAba('fichas', this)">📝 Responder Fichas</button>
-        <button class="nav-btn" onclick="mudarAba('turmas', this)">🏫 Minhas Turmas</button>
-        <button class="nav-btn" onclick="mudarAba('config', this)">⚙️ Configurações</button>
+        <button class="nav-btn active" onclick="mudarAba('fichas', this)">Responder Fichas</button>
+        <button class="nav-btn" onclick="mudarAba('turmas', this)">Minhas Turmas</button>
     </nav>
 
     <div class="topbar-user">
@@ -143,7 +168,8 @@
             <strong id="profNome">Professor</strong>
             <span>Docente</span>
         </div>
-        <button class="btn-logout" onclick="logout()">Sair</button>
+        <button class="btn-header" onclick="mudarAba('config')">Configurações</button>
+        <button class="btn-header btn-logout" onclick="logout()">Sair</button>
     </div>
 </div>
 
@@ -153,7 +179,7 @@
     <div id="aba-fichas" class="aba-conteudo active">
         <div class="card">
             <h2>Fichas de Avaliação Disponíveis</h2>
-            <label>Selecione uma Ficha para Preencher:</label>
+            <label>Selecione uma Ficha para Preencher</label>
             <select id="selectFichas" onchange="carregarPerguntas()">
                 <option value="">-- Selecione uma Ficha --</option>
             </select>
@@ -170,7 +196,7 @@
         <div class="card">
             <h2>Minhas Turmas Associadas</h2>
             <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">
-                Abaixo estão as turmas às quais foi vinculado pelo administrador do sistema.
+                Lista das turmas atribuídas ao seu perfil docente pela administração.
             </p>
             <div id="listaMinhasTurmas">
                 <p style="color: #64748b; font-style: italic;">Carregando suas turmas...</p>
@@ -178,16 +204,16 @@
         </div>
     </div>
 
-    <!-- ABA 3: CONFIGURAÇÕES DA CONTA -->
+    <!-- ABA 3: CONFIGURAÇÕES DA CONTA (Acessado via topo) -->
     <div id="aba-config" class="aba-conteudo">
         <div class="card">
-            <h2>Configurações da Conta</h2>
-            <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">Dados do seu perfil de professor.</p>
+            <h2>Configurações do Perfil</h2>
+            <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">Dados cadastrais do perfil docente.</p>
             
             <label>Nome Completo</label>
             <input type="text" id="configNome" readonly>
 
-            <label>E-mail registrado</label>
+            <label>E-mail Registrado</label>
             <input type="text" id="configEmail" readonly>
 
             <label>Perfil de Acesso</label>
@@ -196,6 +222,10 @@
     </div>
 
 </div>
+
+<footer class="footer">
+    <p>Sistema de Pré-Conselho Escolar &copy; Todos os direitos reservados.</p>
+</footer>
 
 <script>
     const API_URL = window.location.hostname === 'localhost' 
@@ -216,7 +246,9 @@
         document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
         
         document.getElementById(`aba-${idAba}`).classList.add('active');
-        elBotao.classList.add('active');
+        if (elBotao) {
+            elBotao.classList.add('active');
+        }
     }
 
     async function carregarFichas() {
@@ -228,7 +260,7 @@
 
             if (fichas.length === 0) {
                 select.innerHTML = '<option value="">Nenhuma ficha disponível para suas turmas</option>';
-                document.getElementById('listaMinhasTurmas').innerHTML = '<p>Nenhuma turma vinculada a este perfil.</p>';
+                document.getElementById('listaMinhasTurmas').innerHTML = '<p style="font-size:14px; color:#64748b;">Nenhuma turma vinculada a este perfil no momento.</p>';
                 return;
             }
 
@@ -239,10 +271,9 @@
                 select.appendChild(opt);
             });
 
-            // Preenche lista simples na aba 'Minhas Turmas'
             const turmasUnicas = [...new Set(fichas.map(f => f.turma_id))];
             document.getElementById('listaMinhasTurmas').innerHTML = turmasUnicas.map(id => `
-                <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:12px; border-radius:6px; margin-bottom:8px;">
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px 16px; border-radius:6px; margin-bottom:8px; font-size:14px;">
                     <strong>Turma ID: ${id}</strong>
                 </div>
             `).join('');
