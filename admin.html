@@ -37,9 +37,9 @@
             background: transparent;
             border: none;
             color: #94a3b8;
-            padding: 0 16px;
+            padding: 0 14px;
             height: 100%;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -102,6 +102,31 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
 
+        .item-lista {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 14px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .resposta-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 14px;
+        }
+        .resposta-card header {
+            font-weight: 700;
+            color: #1d4ed8;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
         .pergunta-box {
             border: 1px solid #e2e8f0;
             padding: 16px;
@@ -142,13 +167,14 @@
 <body>
 
 <div class="topbar">
-    <div class="topbar-brand">Pré-Conselho <span>| Painel Administrativo</span></div>
+    <div class="topbar-brand">Pré-Conselho <span>| Admin</span></div>
     
     <nav class="topbar-nav">
         <button class="nav-btn active" onclick="mudarAba('fichas', this)">Fichas</button>
         <button class="nav-btn" onclick="mudarAba('turmas', this)">Turmas</button>
         <button class="nav-btn" onclick="mudarAba('materias', this)">Matérias</button>
         <button class="nav-btn" onclick="mudarAba('vinculos', this)">Professores</button>
+        <button class="nav-btn" onclick="mudarAba('desempenho', this)">Desempenho Geral</button>
     </nav>
 
     <div class="topbar-user">
@@ -190,7 +216,7 @@
         </div>
     </div>
 
-    <!-- ABA 2: TURMAS -->
+    <!-- ABA 2: TURMAS (CADASTRO E LISTAGEM) -->
     <div id="aba-turmas" class="aba-conteudo">
         <div class="card">
             <h2>Cadastrar Nova Turma</h2>
@@ -199,6 +225,13 @@
                 <input type="text" id="nomeTurma" required placeholder="Ex: 1º Ano A, 2º Ano B...">
                 <button type="submit" class="btn-primary">Cadastrar Turma</button>
             </form>
+        </div>
+
+        <div class="card">
+            <h2>Turmas Cadastradas</h2>
+            <div id="listaTurmasCadastradas">
+                <p style="color: #64748b;">Carregando turmas...</p>
+            </div>
         </div>
     </div>
 
@@ -230,7 +263,22 @@
         </div>
     </div>
 
-    <!-- ABA 5: CONFIGURAÇÕES DA CONTA (Acessado via topo) -->
+    <!-- ABA 5: DESEMPENHO GERAL DA TURMA (EXCLUSIVO ADMIN) -->
+    <div id="aba-desempenho" class="aba-conteudo">
+        <div class="card">
+            <h2>Painel de Desempenho Geral por Ficha</h2>
+            <label>Selecione a Ficha para Visualizar as Respostas dos Professores:</label>
+            <select id="selectFichaDesempenho" onchange="carregarRespostasDesempenho()">
+                <option value="">-- Selecione uma Ficha --</option>
+            </select>
+
+            <div id="containerDesempenho" style="margin-top: 20px;">
+                <p style="color: #64748b; font-style: italic;">Selecione uma ficha acima para carregar o relatório de avaliação dos professores.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 6: CONFIGURAÇÕES DA CONTA -->
     <div id="aba-config" class="aba-conteudo">
         <div class="card">
             <h2>Configurações da Conta</h2>
@@ -285,13 +333,22 @@
             const turmas = await res.json();
             const selectFicha = document.getElementById('turmaId');
             const selectVinculo = document.getElementById('vinculoTurmaId');
+            const containerLista = document.getElementById('listaTurmasCadastradas');
 
             let options = '<option value="">-- Selecione uma Turma --</option>';
             if (turmas.length > 0) {
-                turmas.forEach(t => options += `<option value="${t.id}">${t.nome} (ID: ${t.id})</option>`);
+                options += turmas.map(t => `<option value="${t.id}">${t.nome} (ID: ${t.id})</option>`).join('');
+                containerLista.innerHTML = turmas.map(t => `
+                    <div class="item-lista">
+                        <strong>${t.nome}</strong>
+                        <span style="font-size:12px; color:#64748b;">ID da Turma: ${t.id}</span>
+                    </div>
+                `).join('');
             } else {
                 options = '<option value="">Nenhuma turma cadastrada</option>';
+                containerLista.innerHTML = '<p style="color: #64748b;">Nenhuma turma cadastrada no momento.</p>';
             }
+
             selectFicha.innerHTML = options;
             selectVinculo.innerHTML = options;
         } catch (err) { console.error(err); }
@@ -325,6 +382,55 @@
             }
             select.innerHTML = options;
         } catch (err) { console.error(err); }
+    }
+
+    async function carregarFichasParaDesempenho() {
+        try {
+            const res = await fetch(`${API_URL}/api/professor/fichas`);
+            const fichas = await res.json();
+            const select = document.getElementById('selectFichaDesempenho');
+            select.innerHTML = '<option value="">-- Selecione uma Ficha --</option>';
+            
+            if (fichas.length > 0) {
+                fichas.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.id;
+                    opt.textContent = `${f.titulo} (Turma ID: ${f.turma_id})`;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    async function carregarRespostasDesempenho() {
+        const fichaId = document.getElementById('selectFichaDesempenho').value;
+        const container = document.getElementById('containerDesempenho');
+
+        if (!fichaId) {
+            container.innerHTML = '<p style="color: #64748b; font-style: italic;">Selecione uma ficha acima para carregar o relatório de avaliação dos professores.</p>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/api/admin/fichas/${fichaId}/respostas`);
+            const respostas = await res.json();
+
+            if (respostas.length === 0) {
+                container.innerHTML = '<p style="color: #64748b;">Nenhum professor respondeu esta ficha ainda.</p>';
+                return;
+            }
+
+            container.innerHTML = respostas.map(r => `
+                <div class="resposta-card">
+                    <header>Professor: ${r.professor_nome}</header>
+                    <p style="font-size:14px; margin-bottom:6px;"><strong>Pergunta:</strong> ${r.texto_pergunta} (${r.categoria})</p>
+                    <p style="font-size:14px; margin-bottom:4px;"><strong>Resposta:</strong> ${r.resposta}</p>
+                    ${r.anotacoes ? `<p style="font-size:13px; color:#64748b;"><strong>Anotações:</strong> ${r.anotacoes}</p>` : ''}
+                </div>
+            `).join('');
+        } catch (err) {
+            container.innerHTML = '<p style="color: #dc2626;">Erro ao carregar respostas de desempenho.</p>';
+        }
     }
 
     document.getElementById('formTurma').addEventListener('submit', async (e) => {
@@ -404,6 +510,7 @@
     carregarTurmas();
     carregarMaterias();
     carregarProfessores();
+    carregarFichasParaDesempenho();
 </script>
 
 </body>

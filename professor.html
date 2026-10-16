@@ -141,6 +141,17 @@
         }
         button.btn-submit:hover { background: #1e40af; }
 
+        .item-turma {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 14px 18px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         /* FOOTER */
         .footer {
             background: #0f172a;
@@ -194,9 +205,9 @@
     <!-- ABA 2: MINHAS TURMAS E ALUNOS -->
     <div id="aba-turmas" class="aba-conteudo">
         <div class="card">
-            <h2>Minhas Turmas Associadas</h2>
+            <h2>Minhas Turmas Atribuídas</h2>
             <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">
-                Lista das turmas atribuídas ao seu perfil docente pela administração.
+                Lista das turmas em que você está vinculado como docente responsável.
             </p>
             <div id="listaMinhasTurmas">
                 <p style="color: #64748b; font-style: italic;">Carregando suas turmas...</p>
@@ -204,7 +215,7 @@
         </div>
     </div>
 
-    <!-- ABA 3: CONFIGURAÇÕES DA CONTA (Acessado via topo) -->
+    <!-- ABA 3: CONFIGURAÇÕES DA CONTA -->
     <div id="aba-config" class="aba-conteudo">
         <div class="card">
             <h2>Configurações do Perfil</h2>
@@ -271,10 +282,17 @@
                 select.appendChild(opt);
             });
 
-            const turmasUnicas = [...new Set(fichas.map(f => f.turma_id))];
-            document.getElementById('listaMinhasTurmas').innerHTML = turmasUnicas.map(id => `
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px 16px; border-radius:6px; margin-bottom:8px; font-size:14px;">
-                    <strong>Turma ID: ${id}</strong>
+            // Carregar turmas vinculadas do professor
+            const resTurmas = await fetch(`${API_URL}/api/admin/turmas`);
+            const turmasTodas = await resTurmas.json();
+            const turmasIds = [...new Set(fichas.map(f => f.turma_id))];
+
+            const turmasDoProf = turmasTodas.filter(t => turmasIds.includes(t.id));
+
+            document.getElementById('listaMinhasTurmas').innerHTML = turmasDoProf.map(t => `
+                <div class="item-turma">
+                    <strong>${t.nome}</strong>
+                    <span style="font-size:12px; color:#64748b;">ID da Turma: ${t.id}</span>
                 </div>
             `).join('');
 
