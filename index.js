@@ -189,30 +189,56 @@ app.post('/api/professor/respostas', async (req, res) => {
 
 app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
     try {
-        const { data: respostas, error } = await supabase
+        const fichaId = req.params.id;
+
+        // 1. Busca todas as respostas cadastradas para esta ficha
+        const { data: respostas, error: errResp } = await supabase
             .from('respostas_pre_conselho')
-            .select(`
-                id,
-                resposta,
-                anotacoes,
-                perguntas ( texto_pergunta, categoria ),
-                usuarios ( nome )
-            `)
-            .eq('ficha_id', req.params.id);
+            .select('*')
+            .eq('ficha_id', fichaId);
 
-        if (error) throw error;
+        if (errResp) throw errResp;
 
-        const resultadoFormatado = respostas.map(r => ({
-            id: r.id,
-            texto_pergunta: r.perguntas?.texto_pergunta || 'Pergunta',
-            categoria: r.perguntas?.categoria || 'Geral',
-            professor_nome: r.usuarios?.nome || 'Professor',
-            resposta: r.resposta,
-            anotacoes: r.anotacoes
-        }));
+        if (!respostas || respostas.length === 0) {
+            return res.json([]);
+        }
+
+        // 2. Busca as perguntas relacionadas
+        const perguntaIds = [...new Set(respostas.map(r => r.pergunta_id))];
+        const { data: perguntas, error: errPerg } = await supabase
+            .from('perguntas')
+            .select('id, texto_pergunta, categoria')
+            .in('id', perguntaIds);
+
+        if (errPerg) throw errPerg;
+
+        // 3. Busca os dados dos professores (usuários)
+        const profIds = [...new Set(respostas.map(r => r.professor_id))];
+        const { data: professores, error: errProf } = await supabase
+            .from('usuarios')
+            .select('id, nome')
+            .in('id', profIds);
+
+        if (errProf) throw errProf;
+
+        // 4. Mapeia e junta as informações manualmente
+        const resultadoFormatado = respostas.map(r => {
+            const pergunta = perguntas.find(p => p.id === r.pergunta_id);
+            const prof = professores.find(p => p.id === r.professor_id);
+
+            return {
+                id: r.id,
+                texto_pergunta: pergunta ? pergunta.texto_pergunta : 'Pergunta não encontrada',
+                categoria: pergunta ? pergunta.categoria : 'Geral',
+                professor_nome: prof ? prof.nome : 'Professor Desconhecido',
+                resposta: r.resposta,
+                anotacoes: r.anotacoes || ''
+            };
+        });
 
         res.json(resultadoFormatado);
     } catch (err) {
+        console.error('Erro na rota de respostas:', err);
         res.status(500).json({ error: err.message });
     }
 });
