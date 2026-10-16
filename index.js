@@ -209,6 +209,84 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
 });
 
 // ==========================================
+// NOVAS ROTAS DE VÍNCULO (ADMINISTRADOR)
+// ==========================================
+
+// Listar apenas usuários com perfil 'Professor'
+app.get('/api/admin/professores', async (req, res) => {
+    try {
+        const { data: professores, error } = await supabase
+            .from('usuarios')
+            .select('id, nome, email')
+            .eq('tipo', 'Professor')
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+        res.json(professores);
+    } catch (err) {
+        console.error('Erro ao buscar professores:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Vincular Professor a uma Turma
+app.post('/api/admin/vincular-professor', async (req, res) => {
+    const { professor_id, turma_id } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('professor_turmas')
+            .insert([{ professor_id, turma_id }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.status(201).json({ message: 'Professor vinculado com sucesso!', data });
+    } catch (err) {
+        console.error('Erro ao vincular professor:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// ROTA ATUALIZADA DO PROFESSOR (FILTRADA)
+// ==========================================
+
+// Buscar fichas APENAS das turmas vinculadas ao professor
+app.get('/api/professor/fichas/:professor_id', async (req, res) => {
+    const { professor_id } = req.params;
+    try {
+        // 1. Busca os IDs das turmas onde este professor leciona
+        const { data: vinculos, error: errVinculos } = await supabase
+            .from('professor_turmas')
+            .select('turma_id')
+            .eq('professor_id', professor_id);
+
+        if (errVinculos) throw errVinculos;
+
+        const turmasIds = vinculos.map(v => v.turma_id);
+
+        // Se o professor não tiver nenhuma turma vinculada, retorna lista vazia
+        if (turmasIds.length === 0) {
+            return res.json([]);
+        }
+
+        // 2. Busca apenas as fichas das turmas encontradas
+        const { data: fichas, error: errFichas } = await supabase
+            .from('fichas_avaliacao')
+            .select('*')
+            .in('turma_id', turmasIds)
+            .order('id', { ascending: false });
+
+        if (errFichas) throw errFichas;
+
+        res.json(fichas);
+    } catch (err) {
+        console.error('Erro ao buscar fichas do professor:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
 // ROTAS DO PROFESSOR
 // ==========================================
 

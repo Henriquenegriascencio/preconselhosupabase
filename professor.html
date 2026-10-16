@@ -42,21 +42,29 @@
     }
 
     async function carregarFichas() {
-        try {
-            const res = await fetch(`${API_URL}/api/professor/fichas`);
-            const fichas = await res.json();
+    try {
+        // Envia o ID do professor logado para carregar APENAS as fichas das suas turmas
+        const res = await fetch(`${API_URL}/api/professor/fichas/${usuario.id}`);
+        const fichas = await res.json();
 
-            const select = document.getElementById('selectFichas');
-            fichas.forEach(f => {
-                const opt = document.createElement('option');
-                opt.value = f.id;
-                opt.textContent = `${f.titulo} (Turma: ${f.turma_id})`;
-                select.appendChild(opt);
-            });
-        } catch (err) {
-            alert('Erro ao carregar fichas.');
+        const select = document.getElementById('selectFichas');
+        select.innerHTML = '<option value="">-- Selecione uma Ficha --</option>';
+
+        if (fichas.length === 0) {
+            select.innerHTML = '<option value="">Nenhuma ficha disponível para suas turmas</option>';
+            return;
         }
+
+        fichas.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = `${f.titulo} (Turma ID: ${f.turma_id})`;
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        alert('Erro ao carregar fichas.');
     }
+}
 
     async function carregarPerguntas() {
         const fichaId = document.getElementById('selectFichas').value;

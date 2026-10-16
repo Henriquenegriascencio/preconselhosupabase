@@ -28,7 +28,7 @@
         <h2>1. Cadastrar Nova Turma</h2>
         <form id="formTurma">
             <label>Nome da Turma:</label>
-            <input type="text" id="nomeTurma" required placeholder="Ex: 1º Ano A, 2º Ano B, 301...">
+            <input type="text" id="nomeTurma" required placeholder="Ex: 1º Ano A, 2º Ano B...">
             <button type="submit" class="btn-add">Cadastrar Turma</button>
         </form>
     </div>
@@ -38,14 +38,32 @@
         <h2>2. Cadastrar Nova Matéria</h2>
         <form id="formMateria">
             <label>Nome da Matéria:</label>
-            <input type="text" id="nomeMateria" required placeholder="Ex: Matemática, Português, História...">
+            <input type="text" id="nomeMateria" required placeholder="Ex: Matemática, Português...">
             <button type="submit" class="btn-add">Cadastrar Matéria</button>
         </form>
     </div>
 
-    <!-- SEÇÃO 3: CRIAÇÃO DE FICHAS -->
+    <!-- SEÇÃO 3: VINCULAR PROFESSOR À TURMA -->
     <div class="card-secao">
-        <h2>3. Criar Nova Ficha de Avaliação</h2>
+        <h2>3. Vincular Professor à Turma</h2>
+        <form id="formVinculo">
+            <label>Selecione o Professor:</label>
+            <select id="vinculoProfId" required>
+                <option value="">-- Carregando professores... --</option>
+            </select>
+
+            <label>Selecione a Turma:</label>
+            <select id="vinculoTurmaId" required>
+                <option value="">-- Carregando turmas... --</option>
+            </select>
+
+            <button type="submit" class="btn-add">Vincular Professor</button>
+        </form>
+    </div>
+
+    <!-- SEÇÃO 4: CRIAÇÃO DE FICHAS -->
+    <div class="card-secao">
+        <h2>4. Criar Nova Ficha de Avaliação</h2>
         <form id="formFicha">
             <label>Título da Ficha:</label>
             <input type="text" id="titulo" required placeholder="Ex: Pré-Conselho 1º Trimestre">
@@ -85,23 +103,22 @@
             const res = await fetch(`${API_URL}/api/admin/turmas`);
             const turmas = await res.json();
 
-            const select = document.getElementById('turmaId');
-            select.innerHTML = '<option value="">-- Selecione uma Turma --</option>';
+            const selectFicha = document.getElementById('turmaId');
+            const selectVinculo = document.getElementById('vinculoTurmaId');
 
+            let options = '<option value="">-- Selecione uma Turma --</option>';
             if (turmas.length === 0) {
-                select.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
-                return;
+                options = '<option value="">Nenhuma turma cadastrada</option>';
+            } else {
+                turmas.forEach(t => {
+                    options += `<option value="${t.id}">${t.nome} (ID: ${t.id})</option>`;
+                });
             }
 
-            turmas.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.textContent = `${t.nome} (ID: ${t.id})`;
-                select.appendChild(opt);
-            });
+            selectFicha.innerHTML = options;
+            selectVinculo.innerHTML = options;
         } catch (err) {
             console.error('Erro ao carregar turmas:', err);
-            document.getElementById('turmaId').innerHTML = '<option value="">Erro ao carregar turmas</option>';
         }
     }
 
@@ -126,14 +143,36 @@
             });
         } catch (err) {
             console.error('Erro ao carregar matérias:', err);
-            document.getElementById('materiaId').innerHTML = '<option value="">Erro ao carregar matérias</option>';
+        }
+    }
+
+    async function carregarProfessores() {
+        try {
+            const res = await fetch(`${API_URL}/api/admin/professores`);
+            const professores = await res.json();
+
+            const select = document.getElementById('vinculoProfId');
+            select.innerHTML = '<option value="">-- Selecione um Professor --</option>';
+
+            if (professores.length === 0) {
+                select.innerHTML = '<option value="">Nenhum professor cadastrado</option>';
+                return;
+            }
+
+            professores.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.nome} (${p.email})`;
+                select.appendChild(opt);
+            });
+        } catch (err) {
+            console.error('Erro ao carregar professores:', err);
         }
     }
 
     document.getElementById('formTurma').addEventListener('submit', async (e) => {
         e.preventDefault();
         const nome = document.getElementById('nomeTurma').value;
-
         try {
             const response = await fetch(`${API_URL}/api/admin/turmas`, {
                 method: 'POST',
@@ -141,23 +180,17 @@
                 body: JSON.stringify({ nome })
             });
 
-            const data = await response.json();
             if (response.ok) {
                 alert(`Turma "${nome}" cadastrada com sucesso!`);
                 document.getElementById('nomeTurma').value = '';
                 carregarTurmas();
-            } else {
-                alert('Erro: ' + data.error);
             }
-        } catch (err) {
-            alert('Erro ao conectar ao servidor.');
-        }
+        } catch (err) { alert('Erro ao conectar ao servidor.'); }
     });
 
     document.getElementById('formMateria').addEventListener('submit', async (e) => {
         e.preventDefault();
         const nome = document.getElementById('nomeMateria').value;
-
         try {
             const response = await fetch(`${API_URL}/api/admin/materias`, {
                 method: 'POST',
@@ -165,17 +198,39 @@
                 body: JSON.stringify({ nome })
             });
 
-            const data = await response.json();
             if (response.ok) {
                 alert(`Matéria "${nome}" cadastrada com sucesso!`);
                 document.getElementById('nomeMateria').value = '';
                 carregarMaterias();
+            }
+        } catch (err) { alert('Erro ao conectar ao servidor.'); }
+    });
+
+    document.getElementById('formVinculo').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const professor_id = parseInt(document.getElementById('vinculoProfId').value);
+        const turma_id = parseInt(document.getElementById('vinculoTurmaId').value);
+
+        if (!professor_id || !turma_id) {
+            alert('Selecione o professor e a turma.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/admin/vincular-professor`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ professor_id, turma_id })
+            });
+
+            if (response.ok) {
+                alert('Professor vinculado à turma com sucesso!');
+                document.getElementById('formVinculo').reset();
             } else {
+                const data = await response.json();
                 alert('Erro: ' + data.error);
             }
-        } catch (err) {
-            alert('Erro ao conectar ao servidor.');
-        }
+        } catch (err) { alert('Erro ao conectar ao servidor.'); }
     });
 
     function adicionarPergunta() {
@@ -194,7 +249,6 @@
 
     document.getElementById('formFicha').addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const titulo = document.getElementById('titulo').value;
         const turma_id = parseInt(document.getElementById('turmaId').value);
         const materia_id = parseInt(document.getElementById('materiaId').value);
@@ -218,16 +272,11 @@
                 body: JSON.stringify({ titulo, turma_id, materia_id, data_limite, perguntas })
             });
 
-            const data = await response.json();
             if (response.ok) {
                 alert('Ficha criada com sucesso!');
                 window.location.reload();
-            } else {
-                alert('Erro: ' + data.error);
             }
-        } catch (err) {
-            alert('Erro ao conectar ao servidor.');
-        }
+        } catch (err) { alert('Erro ao conectar ao servidor.'); }
     });
 
     function logout() {
@@ -238,6 +287,7 @@
     adicionarPergunta();
     carregarTurmas();
     carregarMaterias();
+    carregarProfessores();
 </script>
 
 </body>
