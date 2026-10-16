@@ -189,39 +189,52 @@ app.post('/api/professor/respostas', async (req, res) => {
 
 app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
     try {
-        const fichaId = req.params.id;
+        const fichaId = parseInt(req.params.id, 10);
 
-        // 1. Busca todas as respostas cadastradas para esta ficha
+        if (isNaN(fichaId)) {
+            return res.status(400).json({ error: 'ID da ficha inválido' });
+        }
+
+        // 1. Procurar respostas para a ficha selecionada
         const { data: respostas, error: errResp } = await supabase
             .from('respostas_pre_conselho')
             .select('*')
             .eq('ficha_id', fichaId);
 
-        if (errResp) throw errResp;
+        if (errResp) {
+            console.error('Erro Supabase Respostas:', errResp);
+            throw errResp;
+        }
 
         if (!respostas || respostas.length === 0) {
             return res.json([]);
         }
 
-        // 2. Busca as perguntas relacionadas
-        const perguntaIds = [...new Set(respostas.map(r => r.pergunta_id))];
-        const { data: perguntas, error: errPerg } = await supabase
-            .from('perguntas')
-            .select('id, texto_pergunta, categoria')
-            .in('id', perguntaIds);
+        // 2. Extrair IDs de perguntas (filtrando nulos)
+        const perguntaIds = [...new Set(respostas.map(r => r.pergunta_id))].filter(id => id != null);
+        let perguntas = [];
+        if (perguntaIds.length > 0) {
+            const { data: dataPerg, error: errPerg } = await supabase
+                .from('perguntas')
+                .select('id, texto_pergunta, categoria')
+                .in('id', perguntaIds);
 
-        if (errPerg) throw errPerg;
+            if (!errPerg && dataPerg) perguntas = dataPerg;
+        }
 
-        // 3. Busca os dados dos professores (usuários)
-        const profIds = [...new Set(respostas.map(r => r.professor_id))];
-        const { data: professores, error: errProf } = await supabase
-            .from('usuarios')
-            .select('id, nome')
-            .in('id', profIds);
+        // 3. Extrair IDs de professores (filtrando nulos)
+        const profIds = [...new Set(respostas.map(r => r.professor_id))].filter(id => id != null);
+        let professores = [];
+        if (profIds.length > 0) {
+            const { data: dataProf, error: errProf } = await supabase
+                .from('usuarios')
+                .select('id, nome')
+                .in('id', profIds);
 
-        if (errProf) throw errProf;
+            if (!errProf && dataProf) professores = dataProf;
+        }
 
-        // 4. Mapeia e junta as informações manualmente
+        // 4. Cruzar os dados com fallbacks seguros
         const resultadoFormatado = respostas.map(r => {
             const pergunta = perguntas.find(p => p.id === r.pergunta_id);
             const prof = professores.find(p => p.id === r.professor_id);
@@ -231,15 +244,16 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
                 texto_pergunta: pergunta ? pergunta.texto_pergunta : 'Pergunta não encontrada',
                 categoria: pergunta ? pergunta.categoria : 'Geral',
                 professor_nome: prof ? prof.nome : 'Professor Desconhecido',
-                resposta: r.resposta,
+                resposta: r.resposta || '',
                 anotacoes: r.anotacoes || ''
             };
         });
 
-        res.json(resultadoFormatado);
+        return res.json(resultadoFormatado);
+
     } catch (err) {
-        console.error('Erro na rota de respostas:', err);
-        res.status(500).json({ error: err.message });
+        console.error('Erro geral ao procurar respostas:', err);
+        return res.status(500).json({ error: err.message });
     }
 });
 
