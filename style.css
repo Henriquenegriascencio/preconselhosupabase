@@ -84,13 +84,22 @@ button:hover {
     margin-bottom: 10px;
 }
 
-#btnTema {
-    display: flex;
+.btn-header {
+    display: inline-flex;
     align-items: center;
     gap: 6px;
 }
-#btnTema svg {
-    width: 14px;
-    height: 14px;
+
+#iconeTema {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+}
+
+#iconeTema svg {
+    width: 16px;
+    height: 16px;
     fill: currentColor;
 }
