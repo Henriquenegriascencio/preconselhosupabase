@@ -5,18 +5,21 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Servir arquivos estáticos
 app.use(express.static(__dirname));
 
-// Supabase
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'placeholder';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// ----------------------------------------------------
+// LOGIN COM REDIRECIONAMENTO EXPLÍCITO
+// ----------------------------------------------------
+app.get('/api/auth/login', (req, res) => res.redirect('/'));
 
 app.post('/api/auth/login', async (req, res) => {
     try {
@@ -29,24 +32,47 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de usuário.' });
         }
 
-        // 1. Busca na tabela 'usuarios'
+        // 1. Identificação direta de Administrador
+        const eAdminDireto = inputLower === 'admin' || 
+                             inputLower === 'admin@escola.com' || 
+                             inputLower.includes('admin') || 
+                             tipoSolicitado === 'admin';
+
+        if (eAdminDireto) {
+            return res.json({
+                success: true,
+                redirect: 'admin.html',
+                usuario: { 
+                    id: 'admin', 
+                    nome: 'Administrador', 
+                    email: inputLower.includes('@') ? inputLower : 'admin@escola.com',
+                    tipo: 'admin', 
+                    role: 'admin' 
+                }
+            });
+        }
+
+        // 2. Busca na tabela usuarios do Supabase
         let usuarioEncontrado = null;
         try {
-            const { data: usuarios, error } = await supabase.from('usuarios').select('*');
-            if (!error && usuarios && usuarios.length > 0) {
+            const { data: usuarios } = await supabase.from('usuarios').select('*');
+            if (usuarios && usuarios.length > 0) {
                 usuarioEncontrado = usuarios.find(u => 
                     (u.email && String(u.email).toLowerCase().trim() === inputLower) ||
                     (u.nome && String(u.nome).toLowerCase().trim() === inputLower)
                 );
             }
         } catch (supaErr) {
-            console.log('Aviso no Supabase (usuarios):', supaErr.message);
+            console.log('Aviso no Supabase:', supaErr.message);
         }
 
         if (usuarioEncontrado) {
-            const perfilFinal = usuarioEncontrado.tipo || usuarioEncontrado.role || (tipoSolicitado === 'admin' ? 'admin' : 'professor');
+            const eAdminBanco = usuarioEncontrado.tipo === 'admin' || usuarioEncontrado.role === 'admin';
+            const perfilFinal = eAdminBanco ? 'admin' : 'professor';
+
             return res.json({
                 success: true,
+                redirect: eAdminBanco ? 'admin.html' : 'professor.html',
                 usuario: { 
                     id: usuarioEncontrado.id, 
                     nome: usuarioEncontrado.nome, 
@@ -57,23 +83,10 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // 2. Administrador padrão
-        if (tipoSolicitado === 'admin' || inputLower.includes('admin')) {
-            return res.json({
-                success: true,
-                usuario: { 
-                    id: 'admin', 
-                    nome: loginInput.includes('admin') ? loginInput : 'Administrador', 
-                    email: inputLower.includes('@') ? inputLower : 'admin@escola.com',
-                    tipo: 'admin', 
-                    role: 'admin' 
-                }
-            });
-        }
-
-        // 3. Fallback de login para Professor novo
+        // 3. Fallback para Professor
         return res.json({
             success: true,
+            redirect: 'professor.html',
             usuario: { 
                 id: 'prof-' + Date.now(), 
                 nome: loginInput, 
@@ -89,7 +102,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO: CADASTRO (ENVIA CAMPO SENHA)
+// CADASTRO
 // ----------------------------------------------------
 app.get('/api/auth/cadastro', (req, res) => res.redirect('/'));
 
@@ -132,7 +145,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
         if (!usuarioCriado) {
             usuarioCriado = {
                 id: (isAdmin ? 'admin-' : 'prof-') + Date.now(),
-                nome: nome,
+                nome,
                 email: emailFinal,
                 tipo: tipoFinal,
                 role: tipoFinal
@@ -141,6 +154,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
 
         return res.json({
             success: true,
+            redirect: isAdmin ? 'admin.html' : 'professor.html',
             message: `${isAdmin ? 'Administrador' : 'Professor'} cadastrado com sucesso!`,
             usuario: usuarioCriado
         });
@@ -151,7 +165,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// ROTAS DE TURMAS E FICHAS
+// DEMAIS ROTAS DA API
 // ----------------------------------------------------
 app.get('/api/professor/turmas/:id', async (req, res) => {
     try {
@@ -165,7 +179,6 @@ app.get('/api/professor/turmas/:id', async (req, res) => {
         const vinculos = vinculosRes.data || [];
         const turmas = turmasRes.data || [];
         const mats = matsRes.data || [];
-
         const turmaMap = Object.fromEntries(turmas.map(t => [t.id, t]));
         const matMap = Object.fromEntries(mats.map(m => [m.id, m]));
 
@@ -191,9 +204,7 @@ app.get('/api/professor/turmas/:id', async (req, res) => {
         }
 
         res.json(resultado);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/api/professor/fichas/:id', async (req, res) => {
@@ -230,14 +241,9 @@ app.get('/api/professor/fichas/:id', async (req, res) => {
         }));
 
         res.json(fichas);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// PROFESSORES
-// ----------------------------------------------------
 app.get('/api/professores', async (req, res) => {
     try {
         const { data, error } = await supabase.from('usuarios').select('*').order('nome');
@@ -249,11 +255,7 @@ app.get('/api/professores', async (req, res) => {
 app.post('/api/professores', async (req, res) => {
     try {
         const { nome, email, senha } = req.body;
-        const senhaFinal = senha || '123456';
-        const { data, error } = await supabase
-            .from('usuarios')
-            .insert([{ nome, email, senha: senhaFinal, tipo: 'professor' }])
-            .select();
+        const { data, error } = await supabase.from('usuarios').insert([{ nome, email, senha: senha || '123456', tipo: 'professor' }]).select();
         if (error) throw error;
         res.json(data[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -268,9 +270,6 @@ app.delete('/api/professores/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// TURMAS E MATÉRIAS
-// ----------------------------------------------------
 app.get('/api/turmas', async (req, res) => {
     try {
         const { data, error } = await supabase.from('turmas').select('*').order('nome');
@@ -323,9 +322,6 @@ app.delete('/api/materias/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// VÍNCULOS
-// ----------------------------------------------------
 app.get('/api/vinculos', async (req, res) => {
     try {
         const [vInc, users, turmas, mats] = await Promise.all([
@@ -334,7 +330,6 @@ app.get('/api/vinculos', async (req, res) => {
             supabase.from('turmas').select('*'),
             supabase.from('materias').select('*')
         ]);
-
         if (vInc.error) throw vInc.error;
 
         const userMap = Object.fromEntries((users.data || []).map(u => [u.id, u]));
@@ -347,7 +342,6 @@ app.get('/api/vinculos', async (req, res) => {
             turmas: turmaMap[v.turma_id] || null,
             materias: matMap[v.materia_id] || null
         }));
-
         res.json(resultado);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -361,9 +355,6 @@ app.post('/api/vinculos', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// RESPOSTAS
-// ----------------------------------------------------
 app.get('/api/respostas', async (req, res) => {
     try {
         const [respRes, userRes, turmaRes, matRes, pergRes] = await Promise.all([
@@ -373,7 +364,6 @@ app.get('/api/respostas', async (req, res) => {
             supabase.from('materias').select('*'),
             supabase.from('perguntas').select('*')
         ]);
-
         if (respRes.error) throw respRes.error;
 
         const userMap = Object.fromEntries((userRes.data || []).map(u => [u.id, u]));
@@ -388,7 +378,6 @@ app.get('/api/respostas', async (req, res) => {
             materias: matMap[r.materia_id] || null,
             perguntas: pergMap[r.pergunta_id] || null
         }));
-
         res.json(completas);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -402,8 +391,5 @@ app.post('/api/respostas', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// INICIALIZAÇÃO
-// ----------------------------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
