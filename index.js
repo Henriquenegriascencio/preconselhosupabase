@@ -166,6 +166,7 @@ app.post('/api/perguntas', asyncHandler(async (req, res) => {
         pergunta: textoFinal,
         categoria: categoria || 'Geral'
     };
+
     if (turma_id) payload.turma_id = turma_id;
     if (materia_id) payload.materia_id = materia_id;
 
@@ -174,31 +175,21 @@ app.post('/api/perguntas', asyncHandler(async (req, res) => {
     res.json(data[0]);
 }));
 
-app.get('/api/vinculos', asyncHandler(async (req, res) => {
-    const { data: vinculos, error } = await supabase.from('professor_turmas').select('*');
-    if (error) throw error;
-
-    const { usersMap, turmasMap, matsMap } = await buscarMapasRelacionais();
-
-    const resultado = (vinculos || []).map(v => ({
-        ...v,
-        professores: usersMap[v.professor_id || v.usuario_id] || null,
-        turmas: turmasMap[v.turma_id] || null,
-        materias: matsMap[v.materia_id] || null
-    }));
-    res.json(resultado);
-}));
-
 app.post('/api/vinculos', asyncHandler(async (req, res) => {
     const { professor_id, turma_id, materia_id } = req.body;
-    if (!professor_id || !turma_id || !materia_id) {
-        return res.status(400).json({ error: 'Selecione Professor, Turma e Matéria.' });
+    if (!professor_id || !turma_id) {
+        return res.status(400).json({ error: 'Selecione Professor e Turma.' });
     }
 
-    let { data, error } = await supabase.from('professor_turmas').insert([{ professor_id, turma_id, materia_id }]).select();
+    const payload = { professor_id, turma_id };
+    if (materia_id) payload.materia_id = materia_id;
+
+    let { data, error } = await supabase.from('professor_turmas').insert([payload]).select();
 
     if (error && error.message.includes('professor_id')) {
-        const fallback = await supabase.from('professor_turmas').insert([{ usuario_id: professor_id, turma_id, materia_id }]).select();
+        delete payload.professor_id;
+        payload.usuario_id = professor_id;
+        const fallback = await supabase.from('professor_turmas').insert([payload]).select();
         data = fallback.data;
         error = fallback.error;
     }
