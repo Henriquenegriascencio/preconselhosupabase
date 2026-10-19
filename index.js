@@ -262,20 +262,41 @@ app.delete('/api/professores/:id', asyncHandler(async (req, res) => {
     res.json({ success: true });
 }));
 
-app.get('/api/respostas', asyncHandler(async (req, res) => {
-    const { data: respostas, error } = await supabase.from('respostas_pre_conselho').select('*');
+app.post('/api/respostas', asyncHandler(async (req, res) => {
+    const { pergunta_id, turma_id, materia_id, professor_id, usuario_id, resposta, texto_resposta } = req.body;
+    const profFinal = professor_id || usuario_id;
+    const respFinal = resposta || texto_resposta;
+
+    if (!pergunta_id || !respFinal) {
+        return res.status(400).json({ error: 'Pergunta e resposta são obrigatórias.' });
+    }
+
+    const payload = {
+        pergunta_id,
+        resposta: respFinal,
+        texto_resposta: respFinal
+    };
+
+    if (turma_id) payload.turma_id = turma_id;
+    if (materia_id) payload.materia_id = materia_id;
+    if (profFinal) {
+        payload.professor_id = profFinal;
+        payload.usuario_id = profFinal;
+    }
+
+    let { data, error } = await supabase.from('respostas_pre_conselho').insert([payload]).select();
+
+    // Fallback caso alguma das colunas opcionais não exista
+    if (error) {
+        delete payload.texto_resposta;
+        delete payload.usuario_id;
+        const retry = await supabase.from('respostas_pre_conselho').insert([payload]).select();
+        data = retry.data;
+        error = retry.error;
+    }
+
     if (error) throw error;
-
-    const { usersMap, turmasMap, matsMap, pergMap } = await buscarMapasRelacionais();
-
-    const completas = (respostas || []).map(r => ({
-        ...r,
-        professores: usersMap[r.professor_id || r.usuario_id] || null,
-        turmas: turmasMap[r.turma_id] || null,
-        materias: matsMap[r.materia_id] || null,
-        perguntas: pergMap[r.pergunta_id] || null
-    }));
-    res.json(completas);
+    res.json(data ? data[0] : { success: true });
 }));
 
 // Fallback de erro em JSON para a API
