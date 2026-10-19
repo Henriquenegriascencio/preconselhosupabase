@@ -10,6 +10,11 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Rota de teste para confirmar que a API está a funcionar
+app.get('/', (req, res) => {
+    res.json({ status: 'API do Pré-Conselho está ativa e operacional!' });
+});
+
 // 1. GESTÃO DE TURMAS
 app.get('/api/admin/turmas', async (req, res) => {
     try {
@@ -303,6 +308,7 @@ app.get('/api/admin/fichas/:id/respostas', async (req, res) => {
         return res.status(500).json({ error: err.message });
     }
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
