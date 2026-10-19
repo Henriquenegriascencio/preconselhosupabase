@@ -18,18 +18,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.c
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'placeholder';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ----------------------------------------------------
-// ROTA RAIZ
-// ----------------------------------------------------
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// ----------------------------------------------------
-// AUTENTICAÇÃO: LOGIN
-// ----------------------------------------------------
-app.get('/api/auth/login', (req, res) => res.redirect('/'));
-
 app.post('/api/auth/login', async (req, res) => {
     try {
         const body = req.body || {};
