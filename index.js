@@ -17,7 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ----------------------------------------------------
-// LOGIN COM REDIRECIONAMENTO EXPLÍCITO
+// LOGIN
 // ----------------------------------------------------
 app.get('/api/auth/login', (req, res) => res.redirect('/'));
 
@@ -29,143 +29,91 @@ app.post('/api/auth/login', async (req, res) => {
         const tipoSolicitado = String(body.tipo || body.role || '').toLowerCase();
 
         if (!loginInput) {
-            return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de usuário.' });
+            return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de utilizador.' });
         }
 
-        // 1. Identificação direta de Administrador
-        const eAdminDireto = inputLower === 'admin' || 
-                             inputLower === 'admin@escola.com' || 
-                             inputLower.includes('admin') || 
-                             tipoSolicitado === 'admin';
+        // Busca no banco de dados
+        const { data: usuarios, error } = await supabase.from('usuarios').select('*');
+        if (error) {
+            return res.status(500).json({ success: false, error: `Erro no Supabase: ${error.message}` });
+        }
 
-        if (eAdminDireto) {
+        const usuarioEncontrado = (usuarios || []).find(u => 
+            (u.email && String(u.email).toLowerCase().trim() === inputLower) ||
+            (u.nome && String(u.nome).toLowerCase().trim() === inputLower)
+        );
+
+        if (usuarioEncontrado) {
+            const eAdmin = usuarioEncontrado.tipo === 'admin' || usuarioEncontrado.role === 'admin';
+            return res.json({
+                success: true,
+                redirect: eAdmin ? 'admin.html' : 'professor.html',
+                usuario: usuarioEncontrado
+            });
+        }
+
+        // Login de fallback manual para admin se for a primeira vez
+        if (tipoSolicitado === 'admin' || inputLower.includes('admin')) {
             return res.json({
                 success: true,
                 redirect: 'admin.html',
-                usuario: { 
-                    id: 'admin', 
-                    nome: 'Administrador', 
-                    email: inputLower.includes('@') ? inputLower : 'admin@escola.com',
-                    tipo: 'admin', 
-                    role: 'admin' 
-                }
+                usuario: { id: 'admin', nome: 'Administrador', email: 'admin@escola.com', tipo: 'admin' }
             });
         }
 
-        // 2. Busca na tabela usuarios do Supabase
-        let usuarioEncontrado = null;
-        try {
-            const { data: usuarios } = await supabase.from('usuarios').select('*');
-            if (usuarios && usuarios.length > 0) {
-                usuarioEncontrado = usuarios.find(u => 
-                    (u.email && String(u.email).toLowerCase().trim() === inputLower) ||
-                    (u.nome && String(u.nome).toLowerCase().trim() === inputLower)
-                );
-            }
-        } catch (supaErr) {
-            console.log('Aviso no Supabase:', supaErr.message);
-        }
-
-        if (usuarioEncontrado) {
-            const eAdminBanco = usuarioEncontrado.tipo === 'admin' || usuarioEncontrado.role === 'admin';
-            const perfilFinal = eAdminBanco ? 'admin' : 'professor';
-
-            return res.json({
-                success: true,
-                redirect: eAdminBanco ? 'admin.html' : 'professor.html',
-                usuario: { 
-                    id: usuarioEncontrado.id, 
-                    nome: usuarioEncontrado.nome, 
-                    email: usuarioEncontrado.email || `${usuarioEncontrado.nome}@escola.com`, 
-                    tipo: perfilFinal,
-                    role: perfilFinal
-                }
-            });
-        }
-
-        // 3. Fallback para Professor
-        return res.json({
-            success: true,
-            redirect: 'professor.html',
-            usuario: { 
-                id: 'prof-' + Date.now(), 
-                nome: loginInput, 
-                email: inputLower.includes('@') ? inputLower : `${inputLower.replace(/\s+/g, '')}@escola.com`, 
-                tipo: 'professor',
-                role: 'professor'
-            }
-        });
+        return res.status(404).json({ success: false, error: 'Utilizador não encontrado no banco de dados.' });
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: 'Erro ao processar login: ' + err.message });
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // ----------------------------------------------------
-// CADASTRO
+// CADASTRO (ENVIO DIRETO E TRANSPARENTE AO SUPABASE)
 // ----------------------------------------------------
 app.get('/api/auth/cadastro', (req, res) => res.redirect('/'));
 
 app.post('/api/auth/cadastro', async (req, res) => {
     try {
         const body = req.body || {};
-        const nome = String(body.nome || body.usuario || body.name || '').trim();
+        const nome = String(body.nome || '').trim();
         const email = String(body.email || '').trim().toLowerCase();
-        const senha = String(body.senha || body.password || '123456').trim();
-        const tipoSolicitado = String(body.tipo || body.role || '').trim().toLowerCase();
+        const senha = String(body.senha || '123456').trim();
+        const tipoSolicitado = String(body.tipo || body.role || 'professor').trim().toLowerCase();
 
         if (!nome) {
-            return res.status(400).json({ success: false, error: 'Informe o nome para realizar o cadastro.' });
+            return res.status(400).json({ success: false, error: 'O nome é obrigatório.' });
         }
 
         const isAdmin = tipoSolicitado === 'admin' || nome.toLowerCase().includes('admin') || email.includes('admin');
         const tipoFinal = isAdmin ? 'admin' : 'professor';
         const emailFinal = email || `${nome.toLowerCase().replace(/\s+/g, '')}@escola.com`;
 
-        let usuarioCriado = null;
-        try {
-            const { data, error } = await supabase
-                .from('usuarios')
-                .insert([{ nome, email: emailFinal, senha, tipo: tipoFinal }])
-                .select();
+        // Tenta inserir no Supabase e exibe o erro exato caso falhe
+        const { data, error } = await supabase
+            .from('usuarios')
+            .insert([{ nome, email: emailFinal, senha, tipo: tipoFinal }])
+            .select();
 
-            if (!error && data && data.length > 0) {
-                usuarioCriado = {
-                    id: data[0].id,
-                    nome: data[0].nome,
-                    email: data[0].email,
-                    tipo: data[0].tipo || tipoFinal,
-                    role: data[0].tipo || tipoFinal
-                };
-            }
-        } catch (supaErr) {
-            console.log('Aviso ao salvar no Supabase:', supaErr.message);
-        }
-
-        if (!usuarioCriado) {
-            usuarioCriado = {
-                id: (isAdmin ? 'admin-' : 'prof-') + Date.now(),
-                nome,
-                email: emailFinal,
-                tipo: tipoFinal,
-                role: tipoFinal
-            };
+        if (error) {
+            console.error('Erro na inserção do Supabase:', error);
+            return res.status(400).json({ success: false, error: `Falha ao gravar no Supabase: ${error.message}` });
         }
 
         return res.json({
             success: true,
             redirect: isAdmin ? 'admin.html' : 'professor.html',
-            message: `${isAdmin ? 'Administrador' : 'Professor'} cadastrado com sucesso!`,
-            usuario: usuarioCriado
+            message: `${isAdmin ? 'Administrador' : 'Professor'} registado com sucesso!`,
+            usuario: data[0]
         });
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: 'Erro no cadastro: ' + err.message });
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // ----------------------------------------------------
-// DEMAIS ROTAS DA API
+// ROTAS DE CONSULTA E GESTÃO
 // ----------------------------------------------------
 app.get('/api/professor/turmas/:id', async (req, res) => {
     try {
@@ -186,22 +134,13 @@ app.get('/api/professor/turmas/:id', async (req, res) => {
             ? vinculos 
             : vinculos.filter(v => String(v.professor_id || v.usuario_id) === String(id));
 
-        let resultado = filtrados.map(v => ({
+        const resultado = filtrados.map(v => ({
             id: v.id,
             turma_id: v.turma_id,
             materia_id: v.materia_id,
             turmas: turmaMap[v.turma_id] || { nome: 'Turma' },
             materias: matMap[v.materia_id] || { nome: 'Matéria' }
         }));
-
-        if (resultado.length === 0 && turmas.length > 0) {
-            resultado = turmas.map(t => ({
-                turma_id: t.id,
-                materia_id: mats[0]?.id || null,
-                turmas: t,
-                materias: mats[0] || { nome: 'Matéria' }
-            }));
-        }
 
         res.json(resultado);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -392,4 +331,4 @@ app.post('/api/respostas', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor a rodar na porta ${PORT}`));
