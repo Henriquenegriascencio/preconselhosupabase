@@ -5,30 +5,35 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// Middlewares para tratamento de requisições
+// Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir ficheiros estáticos (HTML, CSS, JS)
+// Serve arquivos estáticos (HTML, CSS, JS)
 app.use(express.static(__dirname));
 
-// Configuração do Supabase via variáveis do Render
+// Supabase
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'placeholder';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Memória do servidor para reconhecer Administradores cadastrados
+const adminsRegistrados = new Set(['admin', 'admin@escola.com']);
+
 // ----------------------------------------------------
-// ROTA RAIZ (Abre a página inicial)
+// ROTA RAIZ
 // ----------------------------------------------------
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO: LOGIN
+// AUTENTICAÇÃO / LOGIN
 // ----------------------------------------------------
-app.get('/api/auth/login', (req, res) => res.redirect('/'));
+app.get('/api/auth/login', (req, res) => {
+    res.redirect('/');
+});
 
 app.post('/api/auth/login', async (req, res) => {
     try {
@@ -38,24 +43,29 @@ app.post('/api/auth/login', async (req, res) => {
         const tipoSolicitado = String(body.tipo || body.role || '').toLowerCase();
 
         if (!loginInput) {
-            return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de utilizador.' });
+            return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de usuário.' });
         }
 
-        // 1. Fluxo Administrador
-        if (tipoSolicitado === 'admin' || inputLower.includes('admin')) {
+        // Verifica se é Administrador (pelo tipo, palavra 'admin' ou lista de cadastrados)
+        const eAdmin = tipoSolicitado === 'admin' || 
+                       inputLower.includes('admin') || 
+                       adminsRegistrados.has(inputLower) || 
+                       adminsRegistrados.has(loginInput);
+
+        if (eAdmin) {
             return res.json({
                 success: true,
                 usuario: { 
-                    id: 'admin', 
-                    nome: loginInput.includes('admin') ? loginInput : 'Administrador', 
-                    email: loginInput.includes('@') ? loginInput : 'admin@escola.com',
+                    id: 'admin-' + Date.now(), 
+                    nome: loginInput.includes('admin') ? loginInput : (body.nome || loginInput || 'Administrador'), 
+                    email: inputLower.includes('@') ? inputLower : 'admin@escola.com',
                     tipo: 'admin', 
                     role: 'admin' 
                 }
             });
         }
 
-        // 2. Fluxo Professor (Busca no Supabase)
+        // Busca Professor no Supabase
         let profEncontrado = null;
         try {
             const { data: professores } = await supabase.from('professores').select('*');
@@ -66,7 +76,7 @@ app.post('/api/auth/login', async (req, res) => {
                 );
             }
         } catch (supaErr) {
-            console.log('Aviso no Supabase (professores):', supaErr.message);
+            console.log('Aviso no Supabase:', supaErr.message);
         }
 
         if (profEncontrado) {
@@ -82,7 +92,15 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // Professor não registado no banco: devolve sessão de teste
+        // Se o tipo enviado for explicitamente admin
+        if (tipoSolicitado === 'admin') {
+            return res.json({
+                success: true,
+                usuario: { id: 'admin', nome: loginInput, email: inputLower, tipo: 'admin', role: 'admin' }
+            });
+        }
+
+        // Fallback para Professor
         return res.json({
             success: true,
             usuario: { 
@@ -95,14 +113,16 @@ app.post('/api/auth/login', async (req, res) => {
         });
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: 'Erro ao processar login: ' + err.message });
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO: CADASTRO
+// AUTENTICAÇÃO / CADASTRO
 // ----------------------------------------------------
-app.get('/api/auth/cadastro', (req, res) => res.redirect('/'));
+app.get('/api/auth/cadastro', (req, res) => {
+    res.redirect('/');
+});
 
 app.post('/api/auth/cadastro', async (req, res) => {
     try {
@@ -118,37 +138,69 @@ app.post('/api/auth/cadastro', async (req, res) => {
         const isAdmin = tipoSolicitado === 'admin' || nome.toLowerCase().includes('admin') || email.includes('admin');
         const emailFinal = email || `${nome.toLowerCase().replace(/\s+/g, '')}@escola.com`;
 
+        // 1. CADASTRO DE ADMINISTRADOR
         if (isAdmin) {
+            // Regista o email e nome na lista de admins
+            adminsRegistrados.add(emailFinal);
+            adminsRegistrados.add(nome.toLowerCase());
+
             return res.json({
                 success: true,
                 message: 'Administrador cadastrado com sucesso!',
-                usuario: { id: 'admin-' + Date.now(), nome, email: emailFinal, tipo: 'admin', role: 'admin' }
+                usuario: {
+                    id: 'admin-' + Date.now(),
+                    nome: nome,
+                    email: emailFinal,
+                    tipo: 'admin',
+                    role: 'admin'
+                }
             });
         }
 
+        // 2. CADASTRO DE PROFESSOR
         let usuarioCriado = null;
         try {
-            const { data, error } = await supabase.from('professores').insert([{ nome, email: emailFinal }]).select();
+            const { data, error } = await supabase
+                .from('professores')
+                .insert([{ nome, email: emailFinal }])
+                .select();
+
             if (!error && data && data.length > 0) {
-                usuarioCriado = { id: data[0].id, nome: data[0].nome, email: data[0].email, tipo: 'professor', role: 'professor' };
+                usuarioCriado = {
+                    id: data[0].id,
+                    nome: data[0].nome,
+                    email: data[0].email,
+                    tipo: 'professor',
+                    role: 'professor'
+                };
             }
         } catch (supaErr) {
-            console.log('Aviso ao guardar professor:', supaErr.message);
+            console.log('Aviso ao salvar no Supabase:', supaErr.message);
         }
 
         if (!usuarioCriado) {
-            usuarioCriado = { id: 'prof-' + Date.now(), nome, email: emailFinal, tipo: 'professor', role: 'professor' };
+            usuarioCriado = {
+                id: 'prof-' + Date.now(),
+                nome: nome,
+                email: emailFinal,
+                tipo: 'professor',
+                role: 'professor'
+            };
         }
 
-        return res.json({ success: true, message: 'Professor cadastrado com sucesso!', usuario: usuarioCriado });
+        return res.json({
+            success: true,
+            message: 'Professor cadastrado com sucesso!',
+            usuario: usuarioCriado
+        });
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: 'Erro ao cadastrar: ' + err.message });
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // ----------------------------------------------------
-// ROTAS ESPECÍFICAS DE FICHAS E TURMAS DO PROFESSOR
+// ROTAS DO PROFESSOR (TURMAS E FICHAS)
 // ----------------------------------------------------
 app.get('/api/professor/turmas/:id', async (req, res) => {
     try {
@@ -233,7 +285,7 @@ app.get('/api/professor/fichas/:id', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// GESTÃO CRUD (TURMAS, MATÉRIAS, PROFESSORES, VÍNCULOS)
+// ROTAS CRUD (TURMAS, MATÉRIAS, PROFESSORES, VÍNCULOS, RESPOSTAS)
 // ----------------------------------------------------
 app.get('/api/turmas', async (req, res) => {
     try {
@@ -387,7 +439,7 @@ app.post('/api/respostas', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// ARRANQUE DO SERVIDOR
+// INICIALIZAÇÃO
 // ----------------------------------------------------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor a rodar na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
