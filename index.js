@@ -5,32 +5,30 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// Middlewares
+// Middlewares para tratamento de requisições
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Arquivos estáticos (HTML, CSS, JS)
+// Servir ficheiros estáticos (HTML, CSS, JS)
 app.use(express.static(__dirname));
 
-// Supabase
+// Configuração do Supabase via variáveis do Render
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'placeholder';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ----------------------------------------------------
-// ROTA RAIZ
+// ROTA RAIZ (Abre a página inicial)
 // ----------------------------------------------------
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / LOGIN
+// AUTENTICAÇÃO: LOGIN
 // ----------------------------------------------------
-app.get('/api/auth/login', (req, res) => {
-    res.redirect('/');
-});
+app.get('/api/auth/login', (req, res) => res.redirect('/'));
 
 app.post('/api/auth/login', async (req, res) => {
     try {
@@ -40,10 +38,10 @@ app.post('/api/auth/login', async (req, res) => {
         const tipoSolicitado = String(body.tipo || body.role || '').toLowerCase();
 
         if (!loginInput) {
-            return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de usuário.' });
+            return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de utilizador.' });
         }
 
-        // 1. PERFIL: ADMINISTRADOR
+        // 1. Fluxo Administrador
         if (tipoSolicitado === 'admin' || inputLower.includes('admin')) {
             return res.json({
                 success: true,
@@ -57,7 +55,7 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // 2. PERFIL: PROFESSOR (Busca no Supabase)
+        // 2. Fluxo Professor (Busca no Supabase)
         let profEncontrado = null;
         try {
             const { data: professores } = await supabase.from('professores').select('*');
@@ -68,7 +66,7 @@ app.post('/api/auth/login', async (req, res) => {
                 );
             }
         } catch (supaErr) {
-            console.log('Aviso no Supabase:', supaErr.message);
+            console.log('Aviso no Supabase (professores):', supaErr.message);
         }
 
         if (profEncontrado) {
@@ -84,7 +82,7 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // Retorno para Professor novo/não encontrado no banco
+        // Professor não registado no banco: devolve sessão de teste
         return res.json({
             success: true,
             usuario: { 
@@ -97,16 +95,14 @@ app.post('/api/auth/login', async (req, res) => {
         });
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
+        return res.status(500).json({ success: false, error: 'Erro ao processar login: ' + err.message });
     }
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / CADASTRO
+// AUTENTICAÇÃO: CADASTRO
 // ----------------------------------------------------
-app.get('/api/auth/cadastro', (req, res) => {
-    res.redirect('/');
-});
+app.get('/api/auth/cadastro', (req, res) => res.redirect('/'));
 
 app.post('/api/auth/cadastro', async (req, res) => {
     try {
@@ -126,64 +122,37 @@ app.post('/api/auth/cadastro', async (req, res) => {
             return res.json({
                 success: true,
                 message: 'Administrador cadastrado com sucesso!',
-                usuario: {
-                    id: 'admin-' + Date.now(),
-                    nome: nome,
-                    email: emailFinal,
-                    tipo: 'admin',
-                    role: 'admin'
-                }
+                usuario: { id: 'admin-' + Date.now(), nome, email: emailFinal, tipo: 'admin', role: 'admin' }
             });
         }
 
         let usuarioCriado = null;
         try {
-            const { data, error } = await supabase
-                .from('professores')
-                .insert([{ nome, email: emailFinal }])
-                .select();
-
+            const { data, error } = await supabase.from('professores').insert([{ nome, email: emailFinal }]).select();
             if (!error && data && data.length > 0) {
-                usuarioCriado = {
-                    id: data[0].id,
-                    nome: data[0].nome,
-                    email: data[0].email,
-                    tipo: 'professor',
-                    role: 'professor'
-                };
+                usuarioCriado = { id: data[0].id, nome: data[0].nome, email: data[0].email, tipo: 'professor', role: 'professor' };
             }
         } catch (supaErr) {
-            console.log('Aviso ao salvar no Supabase:', supaErr.message);
+            console.log('Aviso ao guardar professor:', supaErr.message);
         }
 
         if (!usuarioCriado) {
-            usuarioCriado = {
-                id: 'prof-' + Date.now(),
-                nome: nome,
-                email: emailFinal,
-                tipo: 'professor',
-                role: 'professor'
-            };
+            usuarioCriado = { id: 'prof-' + Date.now(), nome, email: emailFinal, tipo: 'professor', role: 'professor' };
         }
 
-        return res.json({
-            success: true,
-            message: 'Professor cadastrado com sucesso!',
-            usuario: usuarioCriado
-        });
+        return res.json({ success: true, message: 'Professor cadastrado com sucesso!', usuario: usuarioCriado });
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
+        return res.status(500).json({ success: false, error: 'Erro ao cadastrar: ' + err.message });
     }
 });
 
 // ----------------------------------------------------
-// TURMAS E MATÉRIAS DO PROFESSOR (ROTA RESOLVE O 404)
+// ROTAS ESPECÍFICAS DE FICHAS E TURMAS DO PROFESSOR
 // ----------------------------------------------------
 app.get('/api/professor/turmas/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
         const [vinculosRes, turmasRes, matsRes] = await Promise.all([
             supabase.from('vinculos').select('*'),
             supabase.from('turmas').select('*'),
@@ -197,7 +166,6 @@ app.get('/api/professor/turmas/:id', async (req, res) => {
         const turmaMap = Object.fromEntries(turmas.map(t => [t.id, t]));
         const matMap = Object.fromEntries(mats.map(m => [m.id, m]));
 
-        // Filtra os vínculos pelo ID do professor (ou traz todos se for admin)
         const filtrados = (id === 'admin' || id.includes('admin')) 
             ? vinculos 
             : vinculos.filter(v => String(v.professor_id) === String(id));
@@ -210,7 +178,6 @@ app.get('/api/professor/turmas/:id', async (req, res) => {
             materias: matMap[v.materia_id] || { nome: 'Matéria' }
         }));
 
-        // Se o professor não tiver vínculos cadastrados ainda, devolve a lista de turmas existentes
         if (resultado.length === 0 && turmas.length > 0) {
             resultado = turmas.map(t => ({
                 turma_id: t.id,
@@ -226,13 +193,9 @@ app.get('/api/professor/turmas/:id', async (req, res) => {
     }
 });
 
-// ----------------------------------------------------
-// FICHAS DO PROFESSOR
-// ----------------------------------------------------
 app.get('/api/professor/fichas/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
         const [vinculosRes, profsRes, turmasRes, matsRes] = await Promise.all([
             supabase.from('vinculos').select('*'),
             supabase.from('professores').select('*'),
@@ -270,16 +233,14 @@ app.get('/api/professor/fichas/:id', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// TURMAS
+// GESTÃO CRUD (TURMAS, MATÉRIAS, PROFESSORES, VÍNCULOS)
 // ----------------------------------------------------
 app.get('/api/turmas', async (req, res) => {
     try {
         const { data, error } = await supabase.from('turmas').select('*').order('nome');
         if (error) throw error;
         res.json(data || []);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/turmas', async (req, res) => {
@@ -288,9 +249,7 @@ app.post('/api/turmas', async (req, res) => {
         const { data, error } = await supabase.from('turmas').insert([{ nome }]).select();
         if (error) throw error;
         res.json(data[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.delete('/api/turmas/:id', async (req, res) => {
@@ -299,22 +258,15 @@ app.delete('/api/turmas/:id', async (req, res) => {
         const { error } = await supabase.from('turmas').delete().eq('id', id);
         if (error) throw error;
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// MATÉRIAS
-// ----------------------------------------------------
 app.get('/api/materias', async (req, res) => {
     try {
         const { data, error } = await supabase.from('materias').select('*').order('nome');
         if (error) throw error;
         res.json(data || []);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/materias', async (req, res) => {
@@ -323,9 +275,7 @@ app.post('/api/materias', async (req, res) => {
         const { data, error } = await supabase.from('materias').insert([{ nome }]).select();
         if (error) throw error;
         res.json(data[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.delete('/api/materias/:id', async (req, res) => {
@@ -334,22 +284,15 @@ app.delete('/api/materias/:id', async (req, res) => {
         const { error } = await supabase.from('materias').delete().eq('id', id);
         if (error) throw error;
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// PROFESSORES
-// ----------------------------------------------------
 app.get('/api/professores', async (req, res) => {
     try {
         const { data, error } = await supabase.from('professores').select('*').order('nome');
         if (error) throw error;
         res.json(data || []);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/professores', async (req, res) => {
@@ -358,9 +301,7 @@ app.post('/api/professores', async (req, res) => {
         const { data, error } = await supabase.from('professores').insert([{ nome, email }]).select();
         if (error) throw error;
         res.json(data[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.delete('/api/professores/:id', async (req, res) => {
@@ -369,14 +310,9 @@ app.delete('/api/professores/:id', async (req, res) => {
         const { error } = await supabase.from('professores').delete().eq('id', id);
         if (error) throw error;
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// VÍNCULOS
-// ----------------------------------------------------
 app.get('/api/vinculos', async (req, res) => {
     try {
         const [vInc, profs, turmas, mats] = await Promise.all([
@@ -400,28 +336,18 @@ app.get('/api/vinculos', async (req, res) => {
         }));
 
         res.json(resultado);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/vinculos', async (req, res) => {
     try {
         const { professor_id, turma_id, materia_id } = req.body;
-        const { data, error } = await supabase
-            .from('vinculos')
-            .insert([{ professor_id, turma_id, materia_id }])
-            .select();
+        const { data, error } = await supabase.from('vinculos').insert([{ professor_id, turma_id, materia_id }]).select();
         if (error) throw error;
         res.json(data[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ----------------------------------------------------
-// RESPOSTAS
-// ----------------------------------------------------
 app.get('/api/respostas', async (req, res) => {
     try {
         const [respRes, profRes, turmaRes, matRes, pergRes] = await Promise.all([
@@ -448,29 +374,20 @@ app.get('/api/respostas', async (req, res) => {
         }));
 
         res.json(completas);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/respostas', async (req, res) => {
     try {
         const respostasArray = req.body;
-        const { data, error } = await supabase
-            .from('respostas')
-            .insert(respostasArray)
-            .select();
+        const { data, error } = await supabase.from('respostas').insert(respostasArray).select();
         if (error) throw error;
         res.json(data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ----------------------------------------------------
 // ARRANQUE DO SERVIDOR
 // ----------------------------------------------------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor a rodar na porta ${PORT}`));
