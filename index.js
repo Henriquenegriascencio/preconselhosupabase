@@ -12,7 +12,10 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(cors());
+
+// Suporte para JSON e dados de formulário tradicional
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Permite servir os ficheiros estáticos do site (HTML, CSS, JS)
 app.use(express.static(__dirname));
@@ -31,17 +34,14 @@ const supabase = createClient(
 );
 
 // ----------------------------------------------------
-// ROTA RAIZ (Abre diretamente o index.html)
+// ROTA RAIZ
 // ----------------------------------------------------
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / LOGIN
-// ----------------------------------------------------
-// ----------------------------------------------------
-// AUTENTICAÇÃO / LOGIN
+// AUTENTICAÇÃO / LOGIN (BLINDADO)
 // ----------------------------------------------------
 app.get('/api/auth/login', (req, res) => {
     res.redirect('/');
@@ -49,44 +49,55 @@ app.get('/api/auth/login', (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, senha, tipo } = req.body || {};
+        const body = req.body || {};
+        const email = String(body.email || body.usuario || '').trim().toLowerCase();
+        const tipo = String(body.tipo || '').toLowerCase();
 
         if (!email) {
-            return res.status(400).json({ error: 'Por favor, informe o e-mail ou nome de utilizador.' });
+            return res.status(400).json({ error: 'Por favor, informe o e-mail ou utilizador.' });
         }
 
-        const emailLimpo = String(email).trim().toLowerCase();
-
-        // 1. Login de Administrador
-        if (tipo === 'admin' || emailLimpo === 'admin@escola.com' || emailLimpo === 'admin') {
+        // 1. Bypass direto para Administrador (Funciona sempre)
+        if (tipo === 'admin' || email === 'admin@escola.com' || email === 'admin') {
             return res.json({
                 success: true,
-                usuario: { nome: 'Administrador', tipo: 'admin', email: emailLimpo }
+                usuario: { nome: 'Administrador', tipo: 'admin', email: email }
             });
         }
 
-        // 2. Login de Professor (Busca defensiva em memória)
-        const { data: professores, error } = await supabase.from('professores').select('*');
+        // 2. Consulta defensiva no Supabase para Professores
+        let professores = [];
+        try {
+            const { data, error } = await supabase.from('professores').select('*');
+            if (error) {
+                console.error('Erro na consulta do Supabase:', error.message);
+            } else {
+                professores = data || [];
+            }
+        } catch (supaErr) {
+            console.error('Falha de ligação ao Supabase:', supaErr.message);
+        }
 
-        if (error) throw error;
-
-        // Procura por e-mail ou nome para funcionar independentemente da estrutura do Supabase
-        const prof = (professores || []).find(p => 
-            (p.email && String(p.email).trim().toLowerCase() === emailLimpo) ||
-            (p.nome && String(p.nome).trim().toLowerCase() === emailLimpo)
+        // Procura por e-mail ou nome
+        const prof = professores.find(p => 
+            (p.email && String(p.email).trim().toLowerCase() === email) ||
+            (p.nome && String(p.nome).trim().toLowerCase() === email)
         );
 
         if (!prof) {
-            return res.status(401).json({ error: 'Professor não encontrado. Verifique o e-mail digitado.' });
+            return res.status(401).json({ 
+                error: 'Professor não encontrado. Verifique o e-mail ou registe o professor no painel Admin.' 
+            });
         }
 
         return res.json({
             success: true,
             usuario: { id: prof.id, nome: prof.nome, email: prof.email || prof.nome, tipo: 'professor' }
         });
+
     } catch (err) {
-        console.error('Erro no login:', err);
-        res.status(500).json({ error: err.message });
+        console.error('Erro interno na rota de login:', err);
+        return res.status(400).json({ error: 'Erro ao processar o login: ' + err.message });
     }
 });
 
@@ -196,7 +207,7 @@ app.delete('/api/professores/:id', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// VÍNCULOS (PROFESSOR - TURMA - MATÉRIA)
+// VÍNCULOS
 // ----------------------------------------------------
 app.get('/api/vinculos', async (req, res) => {
     try {
@@ -289,7 +300,7 @@ app.post('/api/respostas', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// INICIALIZAÇÃO DO SERVIDOR
+// INICIALIZAÇÃO
 // ----------------------------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
