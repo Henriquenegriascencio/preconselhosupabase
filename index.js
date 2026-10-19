@@ -330,5 +330,33 @@ app.post('/api/respostas', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET & POST PERGUNTAS (FICHAS DE AVALIAÇÃO)
+app.get('/api/perguntas', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('perguntas').select('*').order('id');
+        if (error) throw error;
+        res.json(data || []);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/perguntas', async (req, res) => {
+    try {
+        const { texto, pergunta } = req.body;
+        const textoFinal = texto || pergunta;
+        const { data, error } = await supabase.from('perguntas').insert([{ texto: textoFinal, pergunta: textoFinal }]).select();
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/perguntas/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { error } = await supabase.from('perguntas').delete().eq('id', id);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor a rodar na porta ${PORT}`));

@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pré-Conselho - Painel do Administrador</title>
+    <title>Pré-Conselho - Painel de Administração</title>
     
-    <!-- GUARDA DE ROTA: Executada imediatamente antes de renderizar a página -->
     <script>
         (function() {
             const usuarioRaw = localStorage.getItem('usuario') || localStorage.getItem('user');
-            if (!usuarioRaw) {
-                window.location.href = 'index.html';
-                return;
-            }
+            if (!usuarioRaw) { window.location.href = 'index.html'; return; }
             try {
                 const usuario = JSON.parse(usuarioRaw);
-                const tipo = String(usuario.tipo || usuario.role || usuario.perfil || '').toLowerCase();
+                const tipo = String(usuario.tipo || usuario.role || '').toLowerCase();
                 if (tipo !== 'admin') {
                     alert('Acesso negado: Perfil de Administrador necessário.');
                     window.location.href = 'index.html';
@@ -29,38 +25,36 @@
 
     <style>
         :root {
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-color: #1a1a1a;
-            --border-color: #e0e0e0;
+            --bg-color: #ffffff;
+            --card-bg: #f8f9fa;
+            --text-color: #000000;
+            --border-color: #d1d5db;
             --primary-blue: #0056b3;
             --primary-hover: #003d82;
-            --danger-red: #d9534f;
-            --danger-hover: #c9302c;
+            --danger-red: #cc0000;
             --input-bg: #ffffff;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --table-header-bg: #f8f9fa;
+            --table-header-bg: #e9ecef;
         }
 
         [data-theme="dark"] {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --text-color: #f0f6fc;
-            --border-color: #30363d;
+            --bg-color: #000000;
+            --card-bg: #121212;
+            --text-color: #ffffff;
+            --border-color: #27272a;
             --primary-blue: #1f6beb;
             --primary-hover: #388bfd;
-            --danger-red: #f85149;
-            --danger-hover: #da3633;
-            --input-bg: #0d1117;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            --table-header-bg: #21262d;
+            --danger-red: #ff4d4d;
+            --input-bg: #1a1a1a;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            --table-header-bg: #1e1e1e;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
@@ -81,194 +75,54 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        .header-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .user-badge {
-            font-size: 0.9rem;
-            font-weight: 600;
-            background-color: var(--border-color);
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-        }
+        .header-title { font-size: 1.25rem; font-weight: 700; color: var(--primary-blue); }
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+        .user-badge { font-size: 0.85rem; font-weight: 600; background: var(--primary-blue); color: #fff; padding: 0.3rem 0.8rem; border-radius: 20px; }
 
         .icon-btn {
-            background: none;
-            border: 1px solid var(--border-color);
-            padding: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-color);
-            transition: background-color 0.2s;
+            background: none; border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; cursor: pointer; color: var(--text-color);
         }
-
-        .icon-btn:hover {
-            background-color: var(--border-color);
-        }
-
-        .icon-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
+        .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
         .btn-logout {
-            background-color: var(--danger-red);
-            color: #ffffff;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            background-color: var(--danger-red); color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer;
         }
 
-        .btn-logout:hover {
-            background-color: var(--danger-hover);
-        }
+        main { flex: 1; padding: 2rem; max-width: 1200px; width: 100%; margin: 0 auto; }
 
-        main {
-            flex: 1;
-            padding: 2rem;
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 0.5rem;
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-
+        .nav-tabs { display: flex; gap: 0.5rem; border-bottom: 2px solid var(--border-color); margin-bottom: 1.5rem; flex-wrap: wrap; }
         .nav-tab-btn {
-            padding: 0.75rem 1.25rem;
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            opacity: 0.6;
-            border-bottom: 3px solid transparent;
-            transition: opacity 0.2s, border-color 0.2s;
+            padding: 0.75rem 1.25rem; background: none; border: none; color: var(--text-color); font-weight: 600; font-size: 0.95rem; cursor: pointer; opacity: 0.6; border-bottom: 3px solid transparent;
         }
-
-        .nav-tab-btn.active {
-            opacity: 1;
-            border-bottom-color: var(--primary-blue);
-        }
+        .nav-tab-btn.active { opacity: 1; border-bottom-color: var(--primary-blue); color: var(--primary-blue); }
 
         .tab-section {
-            display: none;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+            display: none; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow);
         }
+        .tab-section.active { display: block; }
+        .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--primary-blue); }
 
-        .tab-section.active {
-            display: block;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .form-row input,
-        .form-row select {
-            flex: 1;
-            min-width: 200px;
-            padding: 0.65rem 0.8rem;
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-color);
-            outline: none;
+        .form-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .form-row input, .form-row select {
+            flex: 1; min-width: 200px; padding: 0.65rem 0.8rem; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); outline: none;
         }
 
         .btn-primary {
-            background-color: var(--primary-blue);
-            color: #ffffff;
-            border: none;
-            padding: 0.65rem 1.2rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            background-color: var(--primary-blue); color: #ffffff; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer;
         }
+        .btn-primary:hover { background-color: var(--primary-hover); }
 
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: var(--table-header-bg); font-weight: 600; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
+        .btn-delete { background-color: var(--danger-red); color: white; border: none; padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
 
-        th, td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
+        .resposta-card {
+            border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background-color: var(--input-bg);
         }
-
-        th {
-            background-color: var(--table-header-bg);
-            font-weight: 600;
-        }
-
-        .btn-delete {
-            background-color: var(--danger-red);
-            color: white;
-            border: none;
-            padding: 0.35rem 0.75rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-
-        .btn-delete:hover {
-            background-color: var(--danger-hover);
-        }
-
-        .ficha-card {
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: var(--bg-color);
-        }
-
-        .ficha-header {
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--primary-blue);
-        }
+        .resposta-header { font-weight: 700; color: var(--primary-blue); margin-bottom: 0.5rem; }
+        .resposta-item { margin-top: 0.5rem; padding-left: 0.5rem; border-left: 3px solid var(--primary-blue); }
     </style>
 </head>
 <body>
@@ -278,9 +132,7 @@
         <div class="header-actions">
             <span id="userBadge" class="user-badge">Admin</span>
             <button id="themeToggle" class="icon-btn" aria-label="Alternar Tema">
-                <svg id="themeIcon" viewBox="0 0 24 24">
-                    <path d="M12.3 2a10 10 0 0 0 9.7 11.5 10 10 0 1 1-11.5-9.7z"/>
-                </svg>
+                <svg id="themeIcon" viewBox="0 0 24 24"><path d="M12.3 2a10 10 0 0 0 9.7 11.5 10 10 0 1 1-11.5-9.7z"/></svg>
             </button>
             <button onclick="fazerLogout()" class="btn-logout">Sair</button>
         </div>
@@ -288,58 +140,58 @@
 
     <main>
         <div class="nav-tabs">
-            <button class="nav-tab-btn active" onclick="switchSection('fichas')">Visualizar Fichas</button>
-            <button class="nav-tab-btn" onclick="switchSection('turmas')">Turmas</button>
-            <button class="nav-tab-btn" onclick="switchSection('materias')">Matérias</button>
-            <button class="nav-tab-btn" onclick="switchSection('professores')">Professores</button>
-            <button class="nav-tab-btn" onclick="switchSection('vinculos')">Vínculos</button>
+            <button class="nav-tab-btn active" onclick="switchSection(event, 'perguntas')">Criar Fichas / Perguntas</button>
+            <button class="nav-tab-btn" onclick="switchSection(event, 'respostas')">Respostas dos Professores</button>
+            <button class="nav-tab-btn" onclick="switchSection(event, 'turmas')">Turmas</button>
+            <button class="nav-tab-btn" onclick="switchSection(event, 'materias')">Matérias</button>
+            <button class="nav-tab-btn" onclick="switchSection(event, 'professores')">Professores</button>
+            <button class="nav-tab-btn" onclick="switchSection(event, 'vinculos')">Vínculos</button>
         </div>
 
-        <!-- SESSÃO: VISUALIZAR FICHAS DE AVALIAÇÃO -->
-        <div id="sec-fichas" class="tab-section active">
-            <div class="section-title">Fichas e Avaliações Registradas</div>
-            <div id="containerFichas">Carregando fichas...</div>
+        <!-- ABA 1: CRIAR PERGUNTAS / FICHAS DE AVALIAÇÃO -->
+        <div id="sec-perguntas" class="tab-section active">
+            <div class="section-title">Cadastrar Pergunta para Ficha de Pré-Conselho</div>
+            <form id="formPergunta" class="form-row">
+                <input type="text" id="inputPerguntaTexto" placeholder="Digite a pergunta da ficha de avaliação..." required>
+                <button type="submit" class="btn-primary">Adicionar Pergunta</button>
+            </form>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Pergunta</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaPerguntas"></tbody>
+            </table>
         </div>
 
-        <!-- SESSÃO: TURMAS -->
+        <!-- ABA 2: VISUALIZAR RESPOSTAS DOS PROFESSORES -->
+        <div id="sec-respostas" class="tab-section">
+            <div class="section-title">Respostas Submetidas pelos Professores</div>
+            <div id="containerRespostas">Carregando respostas...</div>
+        </div>
+
+        <!-- OUTRAS ABAS DE GESTÃO -->
         <div id="sec-turmas" class="tab-section">
             <div class="section-title">Gerenciamento de Turmas</div>
             <form id="formTurma" class="form-row">
-                <input type="text" id="inputTurmaNome" placeholder="Nome da Turma (Ex: 9º Ano A)" required>
+                <input type="text" id="inputTurmaNome" placeholder="Ex: 9º Ano A" required>
                 <button type="submit" class="btn-primary">Adicionar Turma</button>
             </form>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nome da Turma</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaTurmas"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Nome</th><th>Ações</th></tr></thead><tbody id="tabelaTurmas"></tbody></table>
         </div>
 
-        <!-- SESSÃO: MATÉRIAS -->
         <div id="sec-materias" class="tab-section">
             <div class="section-title">Gerenciamento de Matérias</div>
             <form id="formMateria" class="form-row">
-                <input type="text" id="inputMateriaNome" placeholder="Nome da Matéria (Ex: Matemática)" required>
+                <input type="text" id="inputMateriaNome" placeholder="Ex: Matemática" required>
                 <button type="submit" class="btn-primary">Adicionar Matéria</button>
             </form>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Matéria</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaMaterias"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Matéria</th><th>Ações</th></tr></thead><tbody id="tabelaMaterias"></tbody></table>
         </div>
 
-        <!-- SESSÃO: PROFESSORES -->
         <div id="sec-professores" class="tab-section">
             <div class="section-title">Professores Cadastrados</div>
             <form id="formProfessor" class="form-row">
@@ -347,21 +199,9 @@
                 <input type="email" id="inputProfEmail" placeholder="email@escola.com" required>
                 <button type="submit" class="btn-primary">Cadastrar Professor</button>
             </form>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
-                        <th>E-mail</th>
-                        <th>Tipo</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaProfessores"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Ações</th></tr></thead><tbody id="tabelaProfessores"></tbody></table>
         </div>
 
-        <!-- SESSÃO: VÍNCULOS -->
         <div id="sec-vinculos" class="tab-section">
             <div class="section-title">Vincular Professor a Turma e Matéria</div>
             <form id="formVinculo" class="form-row">
@@ -370,40 +210,29 @@
                 <select id="selectMateriaVinculo" required><option value="">Selecione a Matéria</option></select>
                 <button type="submit" class="btn-primary">Criar Vínculo</button>
             </form>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Professor</th>
-                        <th>Turma</th>
-                        <th>Matéria</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaVinculos"></tbody>
-            </table>
+            <table><thead><tr><th>Professor</th><th>Turma</th><th>Matéria</th></tr></thead><tbody id="tabelaVinculos"></tbody></table>
         </div>
     </main>
 
     <script>
-        // Inicialização do usuário na interface
         const usuarioLogado = JSON.parse(localStorage.getItem('usuario') || localStorage.getItem('user') || '{}');
         document.getElementById('userBadge').textContent = usuarioLogado.nome || 'Administrador';
 
-        // Alternância de Abas
-        function switchSection(sec) {
+        function switchSection(e, sec) {
             document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
 
-            event.target.classList.add('active');
+            if (e) e.target.classList.add('active');
             document.getElementById(`sec-${sec}`).classList.add('active');
 
+            if (sec === 'perguntas') carregarPerguntas();
+            if (sec === 'respostas') carregarRespostas();
             if (sec === 'turmas') carregarTurmas();
             if (sec === 'materias') carregarMaterias();
             if (sec === 'professores') carregarProfessores();
             if (sec === 'vinculos') carregarVinculosForm();
-            if (sec === 'fichas') carregarFichas();
         }
 
-        // Dark Mode com Ícones SVG
         const themeBtn = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         const moonSvg = `<path d="M12.3 2a10 10 0 0 0 9.7 11.5 10 10 0 1 1-11.5-9.7z"/>`;
@@ -427,152 +256,120 @@
             }
         });
 
-        function fazerLogout() {
-            localStorage.clear();
-            window.location.href = 'index.html';
-        }
+        function fazerLogout() { localStorage.clear(); window.location.href = 'index.html'; }
 
-        // --- REQUISIÇÕES DA API ---
-
-        async function carregarTurmas() {
+        // PERGUNTAS / FICHAS
+        async function carregarPerguntas() {
             try {
-                const res = await fetch('/api/turmas');
-                const turmas = await res.json();
-                const tbody = document.getElementById('tabelaTurmas');
-                tbody.innerHTML = turmas.map(t => `
-                    <tr>
-                        <td>${t.id}</td>
-                        <td>${t.nome}</td>
-                        <td><button class="btn-delete" onclick="deletarItem('/api/turmas/${t.id}', carregarTurmas)">Excluir</button></td>
-                    </tr>
-                `).join('');
-            } catch (err) { console.error(err); }
-        }
-
-        async function carregarMaterias() {
-            try {
-                const res = await fetch('/api/materias');
-                const materias = await res.json();
-                const tbody = document.getElementById('tabelaMaterias');
-                tbody.innerHTML = materias.map(m => `
-                    <tr>
-                        <td>${m.id}</td>
-                        <td>${m.nome}</td>
-                        <td><button class="btn-delete" onclick="deletarItem('/api/materias/${m.id}', carregarMaterias)">Excluir</button></td>
-                    </tr>
-                `).join('');
-            } catch (err) { console.error(err); }
-        }
-
-        async function carregarProfessores() {
-            try {
-                const res = await fetch('/api/professores');
-                const profs = await res.json();
-                const tbody = document.getElementById('tabelaProfessores');
-                tbody.innerHTML = profs.map(p => `
+                const res = await fetch('/api/perguntas');
+                const perguntas = await res.json();
+                const tbody = document.getElementById('tabelaPerguntas');
+                tbody.innerHTML = (perguntas || []).map(p => `
                     <tr>
                         <td>${p.id}</td>
-                        <td>${p.nome}</td>
-                        <td>${p.email || '-'}</td>
-                        <td>${p.tipo || 'professor'}</td>
-                        <td><button class="btn-delete" onclick="deletarItem('/api/professores/${p.id}', carregarProfessores)">Excluir</button></td>
+                        <td>${p.texto || p.pergunta}</td>
+                        <td><button class="btn-delete" onclick="deletarItem('/api/perguntas/${p.id}', carregarPerguntas)">Excluir</button></td>
                     </tr>
                 `).join('');
             } catch (err) { console.error(err); }
         }
 
-        async function carregarVinculosForm() {
+        document.getElementById('formPergunta').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const texto = document.getElementById('inputPerguntaTexto').value.trim();
+            await fetch('/api/perguntas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto, pergunta: texto }) });
+            document.getElementById('inputPerguntaTexto').value = '';
+            carregarPerguntas();
+        });
+
+        // RESPOSTAS ENVIADAS
+        async function carregarRespostas() {
+            const container = document.getElementById('containerRespostas');
             try {
-                const [profs, turmas, mats, vinculos] = await Promise.all([
-                    fetch('/api/professores').then(r => r.json()),
-                    fetch('/api/turmas').then(r => r.json()),
-                    fetch('/api/materias').then(r => r.json()),
-                    fetch('/api/vinculos').then(r => r.json())
-                ]);
+                const res = await fetch('/api/respostas');
+                const respostas = await res.json();
 
-                document.getElementById('selectProfVinculo').innerHTML = '<option value="">Selecione o Professor</option>' + profs.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-                document.getElementById('selectTurmaVinculo').innerHTML = '<option value="">Selecione a Turma</option>' + turmas.map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
-                document.getElementById('selectMateriaVinculo').innerHTML = '<option value="">Selecione a Matéria</option>' + mats.map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
-
-                const tbody = document.getElementById('tabelaVinculos');
-                tbody.innerHTML = vinculos.map(v => `
-                    <tr>
-                        <td>${v.professores?.nome || 'Professor N/A'}</td>
-                        <td>${v.turmas?.nome || 'Turma N/A'}</td>
-                        <td>${v.materias?.nome || 'Matéria N/A'}</td>
-                    </tr>
-                `).join('');
-            } catch (err) { console.error(err); }
-        }
-
-        async function carregarFichas() {
-            const container = document.getElementById('containerFichas');
-            try {
-                const res = await fetch('/api/professor/fichas/admin');
-                const fichas = await res.json();
-
-                if (!fichas || fichas.length === 0) {
-                    container.innerHTML = '<p>Nenhuma ficha registrada até o momento.</p>';
+                if (!respostas || respostas.length === 0) {
+                    container.innerHTML = '<p>Nenhuma resposta submetida até ao momento.</p>';
                     return;
                 }
 
-                container.innerHTML = fichas.map(f => `
-                    <div class="ficha-card">
-                        <div class="ficha-header">${f.turmas?.nome || 'Turma'} - ${f.materias?.nome || 'Matéria'}</div>
-                        <div><strong>Professor:</strong> ${f.professores?.nome || 'Não atribuído'}</div>
+                container.innerHTML = respostas.map(r => `
+                    <div class="resposta-card">
+                        <div class="resposta-header">
+                            Turma: ${r.turmas?.nome || 'N/A'} | Matéria: ${r.materias?.nome || 'N/A'}
+                        </div>
+                        <div><strong>Professor:</strong> ${r.professores?.nome || 'Não identificado'}</div>
+                        <div class="resposta-item">
+                            <strong>Pergunta:</strong> ${r.perguntas?.texto || r.perguntas?.pergunta || 'Ficha'}<br>
+                            <strong>Resposta:</strong> ${r.resposta || r.texto_resposta || 'Sem resposta'}
+                        </div>
                     </div>
                 `).join('');
             } catch (err) {
-                container.innerHTML = '<p>Erro ao carregar fichas de avaliação.</p>';
+                container.innerHTML = '<p>Erro ao carregar as respostas.</p>';
             }
         }
 
-        async function deletarItem(url, callback) {
-            if (!confirm('Deseja realmente excluir este registro?')) return;
-            try {
-                await fetch(url, { method: 'DELETE' });
-                callback();
-            } catch (err) { alert('Erro ao excluir registro.'); }
+        // OUTRAS REQUISIÇÕES
+        async function carregarTurmas() {
+            const res = await fetch('/api/turmas'); const data = await res.json();
+            document.getElementById('tabelaTurmas').innerHTML = data.map(t => `<tr><td>${t.id}</td><td>${t.nome}</td><td><button class="btn-delete" onclick="deletarItem('/api/turmas/${t.id}', carregarTurmas)">Excluir</button></td></tr>`).join('');
         }
 
-        // Handlers de formulários
+        async function carregarMaterias() {
+            const res = await fetch('/api/materias'); const data = await res.json();
+            document.getElementById('tabelaMaterias').innerHTML = data.map(m => `<tr><td>${m.id}</td><td>${m.nome}</td><td><button class="btn-delete" onclick="deletarItem('/api/materias/${m.id}', carregarMaterias)">Excluir</button></td></tr>`).join('');
+        }
+
+        async function carregarProfessores() {
+            const res = await fetch('/api/professores'); const data = await res.json();
+            document.getElementById('tabelaProfessores').innerHTML = data.map(p => `<tr><td>${p.id}</td><td>${p.nome}</td><td>${p.email || '-'}</td><td>${p.tipo || 'professor'}</td><td><button class="btn-delete" onclick="deletarItem('/api/professores/${p.id}', carregarProfessores)">Excluir</button></td></tr>`).join('');
+        }
+
+        async function carregarVinculosForm() {
+            const [profs, turmas, mats, vinculos] = await Promise.all([
+                fetch('/api/professores').then(r => r.json()),
+                fetch('/api/turmas').then(r => r.json()),
+                fetch('/api/materias').then(r => r.json()),
+                fetch('/api/vinculos').then(r => r.json())
+            ]);
+            document.getElementById('selectProfVinculo').innerHTML = '<option value="">Selecione o Professor</option>' + profs.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+            document.getElementById('selectTurmaVinculo').innerHTML = '<option value="">Selecione a Turma</option>' + turmas.map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
+            document.getElementById('selectMateriaVinculo').innerHTML = '<option value="">Selecione a Matéria</option>' + mats.map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+            document.getElementById('tabelaVinculos').innerHTML = vinculos.map(v => `<tr><td>${v.professores?.nome || '-'}</td><td>${v.turmas?.nome || '-'}</td><td>${v.materias?.nome || '-'}</td></tr>`).join('');
+        }
+
+        async function deletarItem(url, callback) {
+            if (!confirm('Deseja realmente excluir?')) return;
+            await fetch(url, { method: 'DELETE' }); callback();
+        }
+
         document.getElementById('formTurma').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nome = document.getElementById('inputTurmaNome').value;
-            await fetch('/api/turmas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome }) });
-            document.getElementById('inputTurmaNome').value = '';
-            carregarTurmas();
+            await fetch('/api/turmas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: document.getElementById('inputTurmaNome').value }) });
+            document.getElementById('inputTurmaNome').value = ''; carregarTurmas();
         });
 
         document.getElementById('formMateria').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nome = document.getElementById('inputMateriaNome').value;
-            await fetch('/api/materias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome }) });
-            document.getElementById('inputMateriaNome').value = '';
-            carregarMaterias();
+            await fetch('/api/materias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: document.getElementById('inputMateriaNome').value }) });
+            document.getElementById('inputMateriaNome').value = ''; carregarMaterias();
         });
 
         document.getElementById('formProfessor').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nome = document.getElementById('inputProfNome').value;
-            const email = document.getElementById('inputProfEmail').value;
-            await fetch('/api/professores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome, email }) });
-            document.getElementById('inputProfNome').value = '';
-            document.getElementById('inputProfEmail').value = '';
-            carregarProfessores();
+            await fetch('/api/professores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: document.getElementById('inputProfNome').value, email: document.getElementById('inputProfEmail').value }) });
+            document.getElementById('inputProfNome').value = ''; document.getElementById('inputProfEmail').value = ''; carregarProfessores();
         });
 
         document.getElementById('formVinculo').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const professor_id = document.getElementById('selectProfVinculo').value;
-            const turma_id = document.getElementById('selectTurmaVinculo').value;
-            const materia_id = document.getElementById('selectMateriaVinculo').value;
-            await fetch('/api/vinculos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ professor_id, turma_id, materia_id }) });
+            await fetch('/api/vinculos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ professor_id: document.getElementById('selectProfVinculo').value, turma_id: document.getElementById('selectTurmaVinculo').value, materia_id: document.getElementById('selectMateriaVinculo').value }) });
             carregarVinculosForm();
         });
 
-        // Carrega as fichas ao iniciar
-        carregarFichas();
+        carregarPerguntas();
     </script>
 </body>
 </html>
