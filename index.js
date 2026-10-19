@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / LOGIN (BLINDADO)
+// AUTENTICAÇÃO / LOGIN
 // ----------------------------------------------------
 app.get('/api/auth/login', (req, res) => {
     res.redirect('/');
@@ -51,31 +51,26 @@ app.post('/api/auth/login', async (req, res) => {
     try {
         const body = req.body || {};
         const email = String(body.email || body.usuario || '').trim().toLowerCase();
-        const tipo = String(body.tipo || '').toLowerCase();
 
         if (!email) {
             return res.status(400).json({ error: 'Por favor, informe o e-mail ou utilizador.' });
         }
 
-        // 1. Bypass direto para Administrador (Funciona sempre)
-        if (tipo === 'admin' || email === 'admin@escola.com' || email === 'admin') {
+        // 1. Acesso direto para Administrador
+        if (email.includes('admin')) {
             return res.json({
                 success: true,
                 usuario: { nome: 'Administrador', tipo: 'admin', email: email }
             });
         }
 
-        // 2. Consulta defensiva no Supabase para Professores
+        // 2. Consulta de Professor no Supabase
         let professores = [];
         try {
             const { data, error } = await supabase.from('professores').select('*');
-            if (error) {
-                console.error('Erro na consulta do Supabase:', error.message);
-            } else {
-                professores = data || [];
-            }
+            if (!error) professores = data || [];
         } catch (supaErr) {
-            console.error('Falha de ligação ao Supabase:', supaErr.message);
+            console.error('Falha ao consultar professores:', supaErr.message);
         }
 
         // Procura por e-mail ou nome
@@ -86,7 +81,7 @@ app.post('/api/auth/login', async (req, res) => {
 
         if (!prof) {
             return res.status(401).json({ 
-                error: 'Professor não encontrado. Verifique o e-mail ou registe o professor no painel Admin.' 
+                error: 'Utilizador não encontrado. Faça primeiro o cadastro ou entre como admin.' 
             });
         }
 
@@ -96,8 +91,42 @@ app.post('/api/auth/login', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Erro interno na rota de login:', err);
-        return res.status(400).json({ error: 'Erro ao processar o login: ' + err.message });
+        console.error('Erro no login:', err);
+        return res.status(400).json({ error: err.message });
+    }
+});
+
+// ----------------------------------------------------
+// AUTENTICAÇÃO / CADASTRO (NOVA ROTA PARA RESOLVER O 404)
+// ----------------------------------------------------
+app.post('/api/auth/cadastro', async (req, res) => {
+    try {
+        const body = req.body || {};
+        const nome = String(body.nome || body.usuario || '').trim();
+        const email = String(body.email || '').trim().toLowerCase();
+
+        if (!nome) {
+            return res.status(400).json({ error: 'O nome é obrigatório para o cadastro.' });
+        }
+
+        const emailFinal = email || `${nome.toLowerCase().replace(/\s+/g, '')}@escola.com`;
+
+        // Regista o professor na tabela 'professores' do Supabase
+        const { data, error } = await supabase
+            .from('professores')
+            .insert([{ nome, email: emailFinal }])
+            .select();
+
+        if (error) throw error;
+
+        return res.json({
+            success: true,
+            message: 'Cadastro realizado com sucesso!',
+            usuario: { id: data[0].id, nome: data[0].nome, email: data[0].email, tipo: 'professor' }
+        });
+    } catch (err) {
+        console.error('Erro no cadastro:', err);
+        return res.status(500).json({ error: 'Erro ao cadastrar: ' + err.message });
     }
 });
 
