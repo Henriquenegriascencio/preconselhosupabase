@@ -40,41 +40,52 @@ app.get('/', (req, res) => {
 // ----------------------------------------------------
 // AUTENTICAÇÃO / LOGIN
 // ----------------------------------------------------
-// Evita erro ao tentar aceder a /api/auth/login via GET no navegador
+// ----------------------------------------------------
+// AUTENTICAÇÃO / LOGIN
+// ----------------------------------------------------
 app.get('/api/auth/login', (req, res) => {
     res.redirect('/');
 });
 
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, senha, tipo } = req.body;
+        const { email, senha, tipo } = req.body || {};
 
-        // Login de Administrador
-        if (tipo === 'admin' || email === 'admin@escola.com' || email === 'admin') {
+        if (!email) {
+            return res.status(400).json({ error: 'Por favor, informe o e-mail ou nome de utilizador.' });
+        }
+
+        const emailLimpo = String(email).trim().toLowerCase();
+
+        // 1. Login de Administrador
+        if (tipo === 'admin' || emailLimpo === 'admin@escola.com' || emailLimpo === 'admin') {
             return res.json({
                 success: true,
-                usuario: { nome: 'Administrador', tipo: 'admin', email }
+                usuario: { nome: 'Administrador', tipo: 'admin', email: emailLimpo }
             });
         }
 
-        // Login de Professor (procura o e-mail na tabela 'professores' do Supabase)
-        const { data: prof, error } = await supabase
-            .from('professores')
-            .select('*')
-            .eq('email', email)
-            .maybeSingle();
+        // 2. Login de Professor (Busca defensiva em memória)
+        const { data: professores, error } = await supabase.from('professores').select('*');
 
         if (error) throw error;
 
+        // Procura por e-mail ou nome para funcionar independentemente da estrutura do Supabase
+        const prof = (professores || []).find(p => 
+            (p.email && String(p.email).trim().toLowerCase() === emailLimpo) ||
+            (p.nome && String(p.nome).trim().toLowerCase() === emailLimpo)
+        );
+
         if (!prof) {
-            return res.status(401).json({ error: 'Professor não encontrado com este e-mail.' });
+            return res.status(401).json({ error: 'Professor não encontrado. Verifique o e-mail digitado.' });
         }
 
         return res.json({
             success: true,
-            usuario: { id: prof.id, nome: prof.nome, email: prof.email, tipo: 'professor' }
+            usuario: { id: prof.id, nome: prof.nome, email: prof.email || prof.nome, tipo: 'professor' }
         });
     } catch (err) {
+        console.error('Erro no login:', err);
         res.status(500).json({ error: err.message });
     }
 });
