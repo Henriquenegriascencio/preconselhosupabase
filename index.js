@@ -10,16 +10,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve arquivos estáticos (HTML, CSS, JS)
+// Servir arquivos estáticos
 app.use(express.static(__dirname));
 
 // Supabase
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'placeholder';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// Memória do servidor para reconhecer Administradores cadastrados
-const adminsRegistrados = new Set(['admin', 'admin@escola.com']);
 
 // ----------------------------------------------------
 // ROTA RAIZ
@@ -29,11 +26,9 @@ app.get('/', (req, res) => {
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / LOGIN
+// AUTENTICAÇÃO: LOGIN
 // ----------------------------------------------------
-app.get('/api/auth/login', (req, res) => {
-    res.redirect('/');
-});
+app.get('/api/auth/login', (req, res) => res.redirect('/'));
 
 app.post('/api/auth/login', async (req, res) => {
     try {
@@ -46,18 +41,41 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de usuário.' });
         }
 
-        // Verifica se é Administrador (pelo tipo, palavra 'admin' ou lista de cadastrados)
-        const eAdmin = tipoSolicitado === 'admin' || 
-                       inputLower.includes('admin') || 
-                       adminsRegistrados.has(inputLower) || 
-                       adminsRegistrados.has(loginInput);
+        // 1. Busca na tabela 'usuarios'
+        let usuarioEncontrado = null;
+        try {
+            const { data: usuarios, error } = await supabase.from('usuarios').select('*');
+            if (!error && usuarios && usuarios.length > 0) {
+                usuarioEncontrado = usuarios.find(u => 
+                    (u.email && String(u.email).toLowerCase().trim() === inputLower) ||
+                    (u.nome && String(u.nome).toLowerCase().trim() === inputLower)
+                );
+            }
+        } catch (supaErr) {
+            console.log('Aviso no Supabase (usuarios):', supaErr.message);
+        }
 
-        if (eAdmin) {
+        if (usuarioEncontrado) {
+            const perfilFinal = usuarioEncontrado.tipo || usuarioEncontrado.role || (tipoSolicitado === 'admin' ? 'admin' : 'professor');
             return res.json({
                 success: true,
                 usuario: { 
-                    id: 'admin-' + Date.now(), 
-                    nome: loginInput.includes('admin') ? loginInput : (body.nome || loginInput || 'Administrador'), 
+                    id: usuarioEncontrado.id, 
+                    nome: usuarioEncontrado.nome, 
+                    email: usuarioEncontrado.email || `${usuarioEncontrado.nome}@escola.com`, 
+                    tipo: perfilFinal,
+                    role: perfilFinal
+                }
+            });
+        }
+
+        // 2. Administrador padrão
+        if (tipoSolicitado === 'admin' || inputLower.includes('admin')) {
+            return res.json({
+                success: true,
+                usuario: { 
+                    id: 'admin', 
+                    nome: loginInput.includes('admin') ? loginInput : 'Administrador', 
                     email: inputLower.includes('@') ? inputLower : 'admin@escola.com',
                     tipo: 'admin', 
                     role: 'admin' 
@@ -65,42 +83,7 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // Busca Professor no Supabase
-        let profEncontrado = null;
-        try {
-            const { data: professores } = await supabase.from('professores').select('*');
-            if (professores && professores.length > 0) {
-                profEncontrado = professores.find(p => 
-                    (p.email && String(p.email).toLowerCase().trim() === inputLower) ||
-                    (p.nome && String(p.nome).toLowerCase().trim() === inputLower)
-                );
-            }
-        } catch (supaErr) {
-            console.log('Aviso no Supabase:', supaErr.message);
-        }
-
-        if (profEncontrado) {
-            return res.json({
-                success: true,
-                usuario: { 
-                    id: profEncontrado.id, 
-                    nome: profEncontrado.nome, 
-                    email: profEncontrado.email || `${profEncontrado.nome}@escola.com`, 
-                    tipo: 'professor',
-                    role: 'professor'
-                }
-            });
-        }
-
-        // Se o tipo enviado for explicitamente admin
-        if (tipoSolicitado === 'admin') {
-            return res.json({
-                success: true,
-                usuario: { id: 'admin', nome: loginInput, email: inputLower, tipo: 'admin', role: 'admin' }
-            });
-        }
-
-        // Fallback para Professor
+        // 3. Fallback de login para Professor novo
         return res.json({
             success: true,
             usuario: { 
@@ -113,22 +96,21 @@ app.post('/api/auth/login', async (req, res) => {
         });
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
+        return res.status(500).json({ success: false, error: 'Erro ao processar login: ' + err.message });
     }
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / CADASTRO
+// AUTENTICAÇÃO: CADASTRO (ENVIA CAMPO SENHA)
 // ----------------------------------------------------
-app.get('/api/auth/cadastro', (req, res) => {
-    res.redirect('/');
-});
+app.get('/api/auth/cadastro', (req, res) => res.redirect('/'));
 
 app.post('/api/auth/cadastro', async (req, res) => {
     try {
         const body = req.body || {};
         const nome = String(body.nome || body.usuario || body.name || '').trim();
         const email = String(body.email || '').trim().toLowerCase();
+        const senha = String(body.senha || body.password || '123456').trim();
         const tipoSolicitado = String(body.tipo || body.role || '').trim().toLowerCase();
 
         if (!nome) {
@@ -136,33 +118,14 @@ app.post('/api/auth/cadastro', async (req, res) => {
         }
 
         const isAdmin = tipoSolicitado === 'admin' || nome.toLowerCase().includes('admin') || email.includes('admin');
+        const tipoFinal = isAdmin ? 'admin' : 'professor';
         const emailFinal = email || `${nome.toLowerCase().replace(/\s+/g, '')}@escola.com`;
 
-        // 1. CADASTRO DE ADMINISTRADOR
-        if (isAdmin) {
-            // Regista o email e nome na lista de admins
-            adminsRegistrados.add(emailFinal);
-            adminsRegistrados.add(nome.toLowerCase());
-
-            return res.json({
-                success: true,
-                message: 'Administrador cadastrado com sucesso!',
-                usuario: {
-                    id: 'admin-' + Date.now(),
-                    nome: nome,
-                    email: emailFinal,
-                    tipo: 'admin',
-                    role: 'admin'
-                }
-            });
-        }
-
-        // 2. CADASTRO DE PROFESSOR
         let usuarioCriado = null;
         try {
             const { data, error } = await supabase
-                .from('professores')
-                .insert([{ nome, email: emailFinal }])
+                .from('usuarios')
+                .insert([{ nome, email: emailFinal, senha, tipo: tipoFinal }])
                 .select();
 
             if (!error && data && data.length > 0) {
@@ -170,8 +133,8 @@ app.post('/api/auth/cadastro', async (req, res) => {
                     id: data[0].id,
                     nome: data[0].nome,
                     email: data[0].email,
-                    tipo: 'professor',
-                    role: 'professor'
+                    tipo: data[0].tipo || tipoFinal,
+                    role: data[0].tipo || tipoFinal
                 };
             }
         } catch (supaErr) {
@@ -180,33 +143,33 @@ app.post('/api/auth/cadastro', async (req, res) => {
 
         if (!usuarioCriado) {
             usuarioCriado = {
-                id: 'prof-' + Date.now(),
+                id: (isAdmin ? 'admin-' : 'prof-') + Date.now(),
                 nome: nome,
                 email: emailFinal,
-                tipo: 'professor',
-                role: 'professor'
+                tipo: tipoFinal,
+                role: tipoFinal
             };
         }
 
         return res.json({
             success: true,
-            message: 'Professor cadastrado com sucesso!',
+            message: `${isAdmin ? 'Administrador' : 'Professor'} cadastrado com sucesso!`,
             usuario: usuarioCriado
         });
 
     } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
+        return res.status(500).json({ success: false, error: 'Erro no cadastro: ' + err.message });
     }
 });
 
 // ----------------------------------------------------
-// ROTAS DO PROFESSOR (TURMAS E FICHAS)
+// ROTAS DE TURMAS E FICHAS
 // ----------------------------------------------------
 app.get('/api/professor/turmas/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const [vinculosRes, turmasRes, matsRes] = await Promise.all([
-            supabase.from('vinculos').select('*'),
+            supabase.from('professor_turmas').select('*'),
             supabase.from('turmas').select('*'),
             supabase.from('materias').select('*')
         ]);
@@ -220,7 +183,7 @@ app.get('/api/professor/turmas/:id', async (req, res) => {
 
         const filtrados = (id === 'admin' || id.includes('admin')) 
             ? vinculos 
-            : vinculos.filter(v => String(v.professor_id) === String(id));
+            : vinculos.filter(v => String(v.professor_id || v.usuario_id) === String(id));
 
         let resultado = filtrados.map(v => ({
             id: v.id,
@@ -248,32 +211,32 @@ app.get('/api/professor/turmas/:id', async (req, res) => {
 app.get('/api/professor/fichas/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const [vinculosRes, profsRes, turmasRes, matsRes] = await Promise.all([
-            supabase.from('vinculos').select('*'),
-            supabase.from('professores').select('*'),
+        const [vinculosRes, usersRes, turmasRes, matsRes] = await Promise.all([
+            supabase.from('professor_turmas').select('*'),
+            supabase.from('usuarios').select('*'),
             supabase.from('turmas').select('*'),
             supabase.from('materias').select('*')
         ]);
 
         const vinculos = vinculosRes.data || [];
-        const profs = profsRes.data || [];
+        const users = usersRes.data || [];
         const turmas = turmasRes.data || [];
         const mats = matsRes.data || [];
 
-        const profMap = Object.fromEntries(profs.map(p => [p.id, p]));
+        const userMap = Object.fromEntries(users.map(u => [u.id, u]));
         const turmaMap = Object.fromEntries(turmas.map(t => [t.id, t]));
         const matMap = Object.fromEntries(mats.map(m => [m.id, m]));
 
         const filtrados = (id === 'admin' || id.includes('admin')) 
             ? vinculos 
-            : vinculos.filter(v => String(v.professor_id) === String(id));
+            : vinculos.filter(v => String(v.professor_id || v.usuario_id) === String(id));
 
         const fichas = filtrados.map(v => ({
             id: v.id,
-            professor_id: v.professor_id,
+            professor_id: v.professor_id || v.usuario_id,
             turma_id: v.turma_id,
             materia_id: v.materia_id,
-            professores: profMap[v.professor_id] || null,
+            professores: userMap[v.professor_id || v.usuario_id] || null,
             turmas: turmaMap[v.turma_id] || { nome: 'Turma Geral' },
             materias: matMap[v.materia_id] || { nome: 'Matéria Geral' }
         }));
@@ -285,7 +248,40 @@ app.get('/api/professor/fichas/:id', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// ROTAS CRUD (TURMAS, MATÉRIAS, PROFESSORES, VÍNCULOS, RESPOSTAS)
+// PROFESSORES
+// ----------------------------------------------------
+app.get('/api/professores', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('usuarios').select('*').order('nome');
+        if (error) throw error;
+        res.json(data || []);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/professores', async (req, res) => {
+    try {
+        const { nome, email, senha } = req.body;
+        const senhaFinal = senha || '123456';
+        const { data, error } = await supabase
+            .from('usuarios')
+            .insert([{ nome, email, senha: senhaFinal, tipo: 'professor' }])
+            .select();
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/professores/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { error } = await supabase.from('usuarios').delete().eq('id', id);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ----------------------------------------------------
+// TURMAS E MATÉRIAS
 // ----------------------------------------------------
 app.get('/api/turmas', async (req, res) => {
     try {
@@ -339,50 +335,27 @@ app.delete('/api/materias/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/professores', async (req, res) => {
-    try {
-        const { data, error } = await supabase.from('professores').select('*').order('nome');
-        if (error) throw error;
-        res.json(data || []);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post('/api/professores', async (req, res) => {
-    try {
-        const { nome, email } = req.body;
-        const { data, error } = await supabase.from('professores').insert([{ nome, email }]).select();
-        if (error) throw error;
-        res.json(data[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/professores/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { error } = await supabase.from('professores').delete().eq('id', id);
-        if (error) throw error;
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
+// ----------------------------------------------------
+// VÍNCULOS
+// ----------------------------------------------------
 app.get('/api/vinculos', async (req, res) => {
     try {
-        const [vInc, profs, turmas, mats] = await Promise.all([
-            supabase.from('vinculos').select('*'),
-            supabase.from('professores').select('*'),
+        const [vInc, users, turmas, mats] = await Promise.all([
+            supabase.from('professor_turmas').select('*'),
+            supabase.from('usuarios').select('*'),
             supabase.from('turmas').select('*'),
             supabase.from('materias').select('*')
         ]);
 
         if (vInc.error) throw vInc.error;
 
-        const profMap = Object.fromEntries((profs.data || []).map(p => [p.id, p]));
+        const userMap = Object.fromEntries((users.data || []).map(u => [u.id, u]));
         const turmaMap = Object.fromEntries((turmas.data || []).map(t => [t.id, t]));
         const matMap = Object.fromEntries((mats.data || []).map(m => [m.id, m]));
 
         const resultado = (vInc.data || []).map(v => ({
             ...v,
-            professores: profMap[v.professor_id] || null,
+            professores: userMap[v.professor_id || v.usuario_id] || null,
             turmas: turmaMap[v.turma_id] || null,
             materias: matMap[v.materia_id] || null
         }));
@@ -394,17 +367,20 @@ app.get('/api/vinculos', async (req, res) => {
 app.post('/api/vinculos', async (req, res) => {
     try {
         const { professor_id, turma_id, materia_id } = req.body;
-        const { data, error } = await supabase.from('vinculos').insert([{ professor_id, turma_id, materia_id }]).select();
+        const { data, error } = await supabase.from('professor_turmas').insert([{ professor_id, turma_id, materia_id }]).select();
         if (error) throw error;
         res.json(data[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ----------------------------------------------------
+// RESPOSTAS
+// ----------------------------------------------------
 app.get('/api/respostas', async (req, res) => {
     try {
-        const [respRes, profRes, turmaRes, matRes, pergRes] = await Promise.all([
-            supabase.from('respostas').select('*'),
-            supabase.from('professores').select('*'),
+        const [respRes, userRes, turmaRes, matRes, pergRes] = await Promise.all([
+            supabase.from('respostas_pre_conselho').select('*'),
+            supabase.from('usuarios').select('*'),
             supabase.from('turmas').select('*'),
             supabase.from('materias').select('*'),
             supabase.from('perguntas').select('*')
@@ -412,14 +388,14 @@ app.get('/api/respostas', async (req, res) => {
 
         if (respRes.error) throw respRes.error;
 
-        const profMap = Object.fromEntries((profRes.data || []).map(p => [p.id, p]));
+        const userMap = Object.fromEntries((userRes.data || []).map(u => [u.id, u]));
         const turmaMap = Object.fromEntries((turmaRes.data || []).map(t => [t.id, t]));
         const matMap = Object.fromEntries((matRes.data || []).map(m => [m.id, m]));
         const pergMap = Object.fromEntries((pergRes.data || []).map(p => [p.id, p]));
 
         const completas = (respRes.data || []).map(r => ({
             ...r,
-            professores: profMap[r.professor_id] || null,
+            professores: userMap[r.professor_id || r.usuario_id] || null,
             turmas: turmaMap[r.turma_id] || null,
             materias: matMap[r.materia_id] || null,
             perguntas: pergMap[r.pergunta_id] || null
@@ -432,7 +408,7 @@ app.get('/api/respostas', async (req, res) => {
 app.post('/api/respostas', async (req, res) => {
     try {
         const respostasArray = req.body;
-        const { data, error } = await supabase.from('respostas').insert(respostasArray).select();
+        const { data, error } = await supabase.from('respostas_pre_conselho').insert(respostasArray).select();
         if (error) throw error;
         res.json(data);
     } catch (err) { res.status(500).json({ error: err.message }); }
