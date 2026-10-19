@@ -1,47 +1,37 @@
-// Tenta carregar o dotenv apenas em ambiente local
-try {
-    require('dotenv').config();
-} catch (e) {
-    // No Render, as variáveis são lidas diretamente do painel Environment
-}
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-app.use(cors());
 
-// Suporte para JSON e dados de formulário tradicional
+// Middlewares para aceitar requisições de qualquer origem e tratar JSON / Formulários
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Permite servir os ficheiros estáticos do site (HTML, CSS, JS)
+// Serve os ficheiros estáticos da pasta (HTML, CSS, JS)
 app.use(express.static(__dirname));
 
-// Validação de segurança das variáveis de ambiente
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+// Leitura direta das variáveis de ambiente configuradas no Render
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'placeholder';
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error('ERRO CRÍTICO: SUPABASE_URL ou SUPABASE_KEY não foram informadas nas variáveis de ambiente!');
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    console.warn('AVISO: Variáveis SUPABASE_URL ou SUPABASE_KEY não foram encontradas no ambiente.');
 }
 
-const supabase = createClient(
-    SUPABASE_URL || 'https://placeholder.supabase.co', 
-    SUPABASE_KEY || 'placeholder'
-);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ----------------------------------------------------
-// ROTA RAIZ
+// ROTA RAIZ (Abre o index.html)
 // ----------------------------------------------------
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / LOGIN
+// AUTENTICAÇÃO / LOGIN & CADASTRO
 // ----------------------------------------------------
 app.get('/api/auth/login', (req, res) => {
     res.redirect('/');
@@ -50,38 +40,38 @@ app.get('/api/auth/login', (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
     try {
         const body = req.body || {};
-        const email = String(body.email || body.usuario || '').trim().toLowerCase();
+        const loginInput = String(body.email || body.usuario || body.nome || '').trim().toLowerCase();
 
-        if (!email) {
-            return res.status(400).json({ error: 'Por favor, informe o e-mail ou utilizador.' });
+        if (!loginInput) {
+            return res.status(400).json({ error: 'Informe o e-mail ou nome de utilizador.' });
         }
 
         // 1. Acesso direto para Administrador
-        if (email.includes('admin')) {
+        if (loginInput.includes('admin')) {
             return res.json({
                 success: true,
-                usuario: { nome: 'Administrador', tipo: 'admin', email: email }
+                usuario: { id: 'admin', nome: 'Administrador', tipo: 'admin', email: loginInput }
             });
         }
 
-        // 2. Consulta de Professor no Supabase
-        let professores = [];
-        try {
-            const { data, error } = await supabase.from('professores').select('*');
-            if (!error) professores = data || [];
-        } catch (supaErr) {
-            console.error('Falha ao consultar professores:', supaErr.message);
+        // 2. Consulta à tabela 'professores' no Supabase
+        const { data: professores, error } = await supabase.from('professores').select('*');
+        
+        if (error) {
+            console.error('Erro Supabase (professores):', error.message);
         }
 
+        const profs = professores || [];
+        
         // Procura por e-mail ou nome
-        const prof = professores.find(p => 
-            (p.email && String(p.email).trim().toLowerCase() === email) ||
-            (p.nome && String(p.nome).trim().toLowerCase() === email)
+        const prof = profs.find(p => 
+            (p.email && String(p.email).trim().toLowerCase() === loginInput) ||
+            (p.nome && String(p.nome).trim().toLowerCase() === loginInput)
         );
 
         if (!prof) {
             return res.status(401).json({ 
-                error: 'Utilizador não encontrado. Faça primeiro o cadastro ou entre como admin.' 
+                error: 'Utilizador não encontrado. Registe o professor no painel ou faça o cadastro.' 
             });
         }
 
@@ -92,13 +82,10 @@ app.post('/api/auth/login', async (req, res) => {
 
     } catch (err) {
         console.error('Erro no login:', err);
-        return res.status(400).json({ error: err.message });
+        return res.status(500).json({ error: 'Erro interno no servidor: ' + err.message });
     }
 });
 
-// ----------------------------------------------------
-// AUTENTICAÇÃO / CADASTRO (NOVA ROTA PARA RESOLVER O 404)
-// ----------------------------------------------------
 app.post('/api/auth/cadastro', async (req, res) => {
     try {
         const body = req.body || {};
@@ -106,12 +93,11 @@ app.post('/api/auth/cadastro', async (req, res) => {
         const email = String(body.email || '').trim().toLowerCase();
 
         if (!nome) {
-            return res.status(400).json({ error: 'O nome é obrigatório para o cadastro.' });
+            return res.status(400).json({ error: 'O nome é obrigatório para realizar o cadastro.' });
         }
 
         const emailFinal = email || `${nome.toLowerCase().replace(/\s+/g, '')}@escola.com`;
 
-        // Regista o professor na tabela 'professores' do Supabase
         const { data, error } = await supabase
             .from('professores')
             .insert([{ nome, email: emailFinal }])
@@ -121,7 +107,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
 
         return res.json({
             success: true,
-            message: 'Cadastro realizado com sucesso!',
+            message: 'Cadastro efetuado com sucesso!',
             usuario: { id: data[0].id, nome: data[0].nome, email: data[0].email, tipo: 'professor' }
         });
     } catch (err) {
@@ -236,7 +222,7 @@ app.delete('/api/professores/:id', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// VÍNCULOS
+// VÍNCULOS (Interseção em memória para evitar erros PGRST)
 // ----------------------------------------------------
 app.get('/api/vinculos', async (req, res) => {
     try {
@@ -329,9 +315,9 @@ app.post('/api/respostas', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// INICIALIZAÇÃO
+// ARRANQUE DO SERVIDOR
 // ----------------------------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor a rodar na porta ${PORT}`);
+    console.log(`Servidor ativo e pronto na porta ${PORT}`);
 });
