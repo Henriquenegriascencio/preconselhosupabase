@@ -10,19 +10,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-// Sanitização das variáveis de ambiente do Supabase
+// Higienização da URL e chave do Supabase
 const rawUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
 const SUPABASE_URL = rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
 const SUPABASE_KEY = (process.env.SUPABASE_KEY || 'placeholder').trim();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Wrapper para capturar erros assíncronos
+// Handler assíncrono para captura automática de erros
 const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-// Mapeamento relacional de apoio
+// Mapeamento relacional auxiliar
 async function buscarMapasRelacionais() {
     const [usersRes, turmasRes, matsRes, pergRes] = await Promise.all([
         supabase.from('usuarios').select('*'),
@@ -42,14 +42,14 @@ async function buscarMapasRelacionais() {
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO E CADASTRO
+// 1. AUTENTICAÇÃO E CADASTRO
 // ----------------------------------------------------
 app.post('/api/auth/login', asyncHandler(async (req, res) => {
     const body = req.body || {};
     const loginInput = String(body.email || body.usuario || body.nome || body.login || '').trim().toLowerCase();
 
     if (!loginInput) {
-        return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de utilizador.' });
+        return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de usuário.' });
     }
 
     const { data: usuarios, error } = await supabase.from('usuarios').select('*');
@@ -69,7 +69,7 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
         });
     }
 
-    return res.status(404).json({ success: false, error: 'Utilizador não encontrado no banco de dados.' });
+    return res.status(404).json({ success: false, error: 'Usuário não encontrado no banco de dados.' });
 }));
 
 app.post('/api/auth/cadastro', asyncHandler(async (req, res) => {
@@ -101,7 +101,7 @@ app.post('/api/auth/cadastro', asyncHandler(async (req, res) => {
 }));
 
 // ----------------------------------------------------
-// PERGUNTAS / FICHAS (SUPORTE A TEXTO_PERGUNTA, TEXTO E PERGUNTA)
+// 2. PERGUNTAS / FICHAS
 // ----------------------------------------------------
 app.get('/api/perguntas', asyncHandler(async (req, res) => {
     const { data, error } = await supabase.from('perguntas').select('*').order('id');
@@ -118,11 +118,9 @@ app.post('/api/perguntas', asyncHandler(async (req, res) => {
     if (turma_id) basePayload.turma_id = turma_id;
     if (materia_id) basePayload.materia_id = materia_id;
 
-    // Tentativa 1: texto_pergunta (coluna NOT NULL principal)
     let payload = { ...basePayload, texto_pergunta: textoFinal };
     let { data, error } = await supabase.from('perguntas').insert([payload]).select();
 
-    // Tentativa 2: texto
     if (error && (error.message.includes('texto_pergunta') || error.code === 'PGRST204')) {
         payload = { ...basePayload, texto: textoFinal };
         const retry1 = await supabase.from('perguntas').insert([payload]).select();
@@ -130,7 +128,6 @@ app.post('/api/perguntas', asyncHandler(async (req, res) => {
         error = retry1.error;
     }
 
-    // Tentativa 3: pergunta
     if (error && (error.message.includes('texto') || error.code === 'PGRST204')) {
         payload = { ...basePayload, pergunta: textoFinal };
         const retry2 = await supabase.from('perguntas').insert([payload]).select();
@@ -150,7 +147,62 @@ app.delete('/api/perguntas/:id', asyncHandler(async (req, res) => {
 }));
 
 // ----------------------------------------------------
-// VÍNCULOS
+// 3. RESPOSTAS DO PRÉ-CONSELHO
+// ----------------------------------------------------
+app.get('/api/respostas', asyncHandler(async (req, res) => {
+    const { data: respostas, error } = await supabase.from('respostas_pre_conselho').select('*');
+    if (error) throw error;
+
+    const { usersMap, turmasMap, matsMap, pergMap } = await buscarMapasRelacionais();
+
+    const completas = (respostas || []).map(r => ({
+        ...r,
+        professores: usersMap[r.professor_id || r.usuario_id] || null,
+        turmas: turmasMap[r.turma_id] || null,
+        materias: matsMap[r.materia_id] || null,
+        perguntas: pergMap[r.pergunta_id] || null
+    }));
+    res.json(completas);
+}));
+
+app.post('/api/respostas', asyncHandler(async (req, res) => {
+    const { pergunta_id, turma_id, materia_id, professor_id, usuario_id, resposta, texto_resposta } = req.body;
+    const profFinal = professor_id || usuario_id;
+    const respFinal = resposta || texto_resposta;
+
+    if (!pergunta_id || !respFinal) {
+        return res.status(400).json({ error: 'Pergunta e resposta são obrigatórias.' });
+    }
+
+    const payload = {
+        pergunta_id,
+        resposta: respFinal,
+        texto_resposta: respFinal
+    };
+
+    if (turma_id) payload.turma_id = turma_id;
+    if (materia_id) payload.materia_id = materia_id;
+    if (profFinal) {
+        payload.professor_id = profFinal;
+        payload.usuario_id = profFinal;
+    }
+
+    let { data, error } = await supabase.from('respostas_pre_conselho').insert([payload]).select();
+
+    if (error) {
+        delete payload.texto_resposta;
+        delete payload.usuario_id;
+        const retry = await supabase.from('respostas_pre_conselho').insert([payload]).select();
+        data = retry.data;
+        error = retry.error;
+    }
+
+    if (error) throw error;
+    res.json(data ? data[0] : { success: true });
+}));
+
+// ----------------------------------------------------
+// 4. VÍNCULOS
 // ----------------------------------------------------
 app.get('/api/vinculos', asyncHandler(async (req, res) => {
     const { data: vinculos, error } = await supabase.from('professor_turmas').select('*');
@@ -198,7 +250,7 @@ app.delete('/api/vinculos/:id', asyncHandler(async (req, res) => {
 }));
 
 // ----------------------------------------------------
-// TURMAS, MATÉRIAS, PROFESSORES E RESPOSTAS
+// 5. TURMAS, MATÉRIAS E PROFESSORES
 // ----------------------------------------------------
 app.get('/api/turmas', asyncHandler(async (req, res) => {
     const { data, error } = await supabase.from('turmas').select('*').order('id');
@@ -262,44 +314,9 @@ app.delete('/api/professores/:id', asyncHandler(async (req, res) => {
     res.json({ success: true });
 }));
 
-app.post('/api/respostas', asyncHandler(async (req, res) => {
-    const { pergunta_id, turma_id, materia_id, professor_id, usuario_id, resposta, texto_resposta } = req.body;
-    const profFinal = professor_id || usuario_id;
-    const respFinal = resposta || texto_resposta;
-
-    if (!pergunta_id || !respFinal) {
-        return res.status(400).json({ error: 'Pergunta e resposta são obrigatórias.' });
-    }
-
-    const payload = {
-        pergunta_id,
-        resposta: respFinal,
-        texto_resposta: respFinal
-    };
-
-    if (turma_id) payload.turma_id = turma_id;
-    if (materia_id) payload.materia_id = materia_id;
-    if (profFinal) {
-        payload.professor_id = profFinal;
-        payload.usuario_id = profFinal;
-    }
-
-    let { data, error } = await supabase.from('respostas_pre_conselho').insert([payload]).select();
-
-    // Fallback caso alguma das colunas opcionais não exista
-    if (error) {
-        delete payload.texto_resposta;
-        delete payload.usuario_id;
-        const retry = await supabase.from('respostas_pre_conselho').insert([payload]).select();
-        data = retry.data;
-        error = retry.error;
-    }
-
-    if (error) throw error;
-    res.json(data ? data[0] : { success: true });
-}));
-
-// Fallback de erro em JSON para a API
+// ----------------------------------------------------
+// 6. TRATAMENTO DE ROTAS NÃO ENCONTRADAS E ERROS GLOBAIS
+// ----------------------------------------------------
 app.use('/api', (req, res) => {
     res.status(404).json({ error: `Rota da API não encontrada: ${req.method} ${req.originalUrl}` });
 });
@@ -310,4 +327,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor a rodar na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
