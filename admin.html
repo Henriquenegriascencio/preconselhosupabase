@@ -85,25 +85,51 @@
 
         .tab-section { display: none; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow); }
         .tab-section.active { display: block; }
-        .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--primary-blue); }
+        
+        .section-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .section-title { font-size: 1.2rem; font-weight: 700; color: var(--primary-blue); }
 
-        .form-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-        .form-row input, .form-row select {
-            flex: 1; min-width: 180px; padding: 0.65rem 0.8rem; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); outline: none;
+        .btn-primary { background-color: var(--primary-blue); color: #ffffff; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+
+        .btn-secondary { background-color: transparent; color: var(--text-color); border: 1px solid var(--border-color); padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
+
+        /* GRID DE CARTÕES DE FICHAS */
+        .fichas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; margin-top: 1rem; }
+        .ficha-card { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow); }
+        .ficha-card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary-blue); margin-bottom: 0.5rem; }
+        .ficha-card-info { font-size: 0.9rem; margin-bottom: 0.3rem; opacity: 0.85; }
+        .badge-cat { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; background-color: var(--primary-blue); color: white; margin-top: 0.5rem; }
+        .ficha-card-actions { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; }
+
+        /* MODAL / TELA DE CRIAÇÃO DE FICHA */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6);
+            display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; width: 100%; max-width: 650px;
+            max-height: 90vh; overflow-y: auto; padding: 1.75rem; box-shadow: var(--shadow);
+        }
+        .modal-title { font-size: 1.25rem; font-weight: 700; color: var(--primary-blue); margin-bottom: 1.25rem; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.4rem; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 0.7rem; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); outline: none;
         }
 
-        .btn-primary { background-color: var(--primary-blue); color: #ffffff; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
+        .pergunta-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; align-items: center; }
+        .pergunta-row input { flex: 2; }
+        .pergunta-row select { flex: 1; }
+
+        .btn-remove-row { background: var(--danger-red); color: white; border: none; padding: 0.6rem; border-radius: 6px; cursor: pointer; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
         th { background-color: var(--table-header-bg); font-weight: 600; }
-
         .btn-delete { background-color: var(--danger-red); color: white; border: none; padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
-
-        .badge-cat {
-            display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; background-color: var(--primary-blue); color: white;
-        }
 
         .resposta-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background-color: var(--input-bg); }
         .resposta-header { font-weight: 700; color: var(--primary-blue); margin-bottom: 0.5rem; }
@@ -125,7 +151,7 @@
 
     <main>
         <div class="nav-tabs">
-            <button class="nav-tab-btn active" onclick="switchSection(event, 'perguntas')">Montar Ficha Avaliativa</button>
+            <button class="nav-tab-btn active" onclick="switchSection(event, 'fichas')">Fichas Avaliadas</button>
             <button class="nav-tab-btn" onclick="switchSection(event, 'respostas')">Respostas dos Professores</button>
             <button class="nav-tab-btn" onclick="switchSection(event, 'turmas')">Turmas</button>
             <button class="nav-tab-btn" onclick="switchSection(event, 'materias')">Matérias</button>
@@ -133,38 +159,19 @@
             <button class="nav-tab-btn" onclick="switchSection(event, 'vinculos')">Vínculos</button>
         </div>
 
-        <!-- ABA 1: CONSTRUTOR COMPLETO DE FICHAS AVALIATIVAS -->
-        <div id="sec-perguntas" class="tab-section active">
-            <div class="section-title">Criar Pergunta / Item Avaliativo</div>
-            <form id="formPergunta" class="form-row">
-                <input type="text" id="inputPerguntaTexto" placeholder="Ex: Como avalia o engajamento geral da turma?" required style="flex: 2;">
-                
-                <select id="selectPerguntaCategoria" required>
-                    <option value="Desempenho Acadêmico">Desempenho Acadêmico</option>
-                    <option value="Comportamento e Disciplina">Comportamento e Disciplina</option>
-                    <option value="Participação e Engajamento">Participação e Engajamento</option>
-                    <option value="Assiduidade e Pontualidade">Assiduidade e Pontualidade</option>
-                    <option value="Geral">Geral</option>
-                </select>
+        <!-- ABA 1: VISUALIZAÇÃO DE FICHAS COM BOTÃO "+ CRIAR NOVA FICHA" -->
+        <div id="sec-fichas" class="tab-section active">
+            <div class="section-header-flex">
+                <div>
+                    <div class="section-title">Fichas Avaliativas</div>
+                    <p style="font-size:0.875rem; opacity:0.8;">Fichas configuradas para o pré-conselho escolar.</p>
+                </div>
+                <button class="btn-primary" onclick="abrirModalFicha()">+ Criar Nova Ficha</button>
+            </div>
 
-                <select id="selectPerguntaTurma"><option value="">Aplicar a: Todas as Turmas</option></select>
-                <select id="selectPerguntaMateria"><option value="">Aplicar a: Todas as Matérias</option></select>
-
-                <button type="submit" class="btn-primary">Adicionar à Ficha</button>
-            </form>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Pergunta / Critério</th>
-                        <th>Categoria</th>
-                        <th>Escopo (Turma / Matéria)</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaPerguntas"></tbody>
-            </table>
+            <div id="gridFichas" class="fichas-grid">
+                <!-- Cartões carregados dinamicamente via JS -->
+            </div>
         </div>
 
         <!-- ABA 2: RESPOSTAS SUBMETIDAS -->
@@ -176,43 +183,78 @@
         <!-- OUTRAS ABAS -->
         <div id="sec-turmas" class="tab-section">
             <div class="section-title">Gerenciamento de Turmas</div>
-            <form id="formTurma" class="form-row">
-                <input type="text" id="inputTurmaNome" placeholder="Ex: 9º Ano A" required>
+            <form id="formTurma" style="display:flex; gap:1rem; margin-bottom:1rem;">
+                <input type="text" id="inputTurmaNome" placeholder="Ex: 9º Ano A" required style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-color);">
                 <button type="submit" class="btn-primary">Adicionar Turma</button>
             </form>
-            <table><thead><tr><th>ID</th><th>Nome</th><th>Ações</th></tr></thead><tbody id="tabelaTurmas"></tbody></table>
+            <table><thead><tr><th>Nome da Turma</th><th>Ações</th></tr></thead><tbody id="tabelaTurmas"></tbody></table>
         </div>
 
         <div id="sec-materias" class="tab-section">
             <div class="section-title">Gerenciamento de Matérias</div>
-            <form id="formMateria" class="form-row">
-                <input type="text" id="inputMateriaNome" placeholder="Ex: Matemática" required>
+            <form id="formMateria" style="display:flex; gap:1rem; margin-bottom:1rem;">
+                <input type="text" id="inputMateriaNome" placeholder="Ex: Matemática" required style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-color);">
                 <button type="submit" class="btn-primary">Adicionar Matéria</button>
             </form>
-            <table><thead><tr><th>ID</th><th>Matéria</th><th>Ações</th></tr></thead><tbody id="tabelaMaterias"></tbody></table>
+            <table><thead><tr><th>Nome da Matéria</th><th>Ações</th></tr></thead><tbody id="tabelaMaterias"></tbody></table>
         </div>
 
         <div id="sec-professores" class="tab-section">
             <div class="section-title">Professores Cadastrados</div>
-            <form id="formProfessor" class="form-row">
-                <input type="text" id="inputProfNome" placeholder="Nome do Professor" required>
-                <input type="email" id="inputProfEmail" placeholder="email@escola.com" required>
+            <form id="formProfessor" style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
+                <input type="text" id="inputProfNome" placeholder="Nome do Professor" required style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-color);">
+                <input type="email" id="inputProfEmail" placeholder="email@escola.com" required style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-color);">
                 <button type="submit" class="btn-primary">Cadastrar Professor</button>
             </form>
-            <table><thead><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Ações</th></tr></thead><tbody id="tabelaProfessores"></tbody></table>
+            <table><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Ações</th></tr></thead><tbody id="tabelaProfessores"></tbody></table>
         </div>
 
         <div id="sec-vinculos" class="tab-section">
             <div class="section-title">Vincular Professor a Turma e Matéria</div>
-            <form id="formVinculo" class="form-row">
-                <select id="selectProfVinculo" required><option value="">Selecione o Professor</option></select>
-                <select id="selectTurmaVinculo" required><option value="">Selecione a Turma</option></select>
-                <select id="selectMateriaVinculo" required><option value="">Selecione a Matéria</option></select>
+            <form id="formVinculo" style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
+                <select id="selectProfVinculo" required style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-color);"><option value="">Selecione o Professor</option></select>
+                <select id="selectTurmaVinculo" required style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-color);"><option value="">Selecione a Turma</option></select>
+                <select id="selectMateriaVinculo" required style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-color);"><option value="">Selecione a Matéria</option></select>
                 <button type="submit" class="btn-primary">Criar Vínculo</button>
             </form>
             <table><thead><tr><th>Professor</th><th>Turma</th><th>Matéria</th></tr></thead><tbody id="tabelaVinculos"></tbody></table>
         </div>
     </main>
+
+    <!-- MODAL / TELA DE CRIAÇÃO DE NOVA FICHA -->
+    <div id="modalFicha" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-title">Criar Nova Ficha Avaliativa</div>
+            <form id="formNovaFicha">
+                <div class="form-group">
+                    <label for="modalTurma">Turma Alvo</label>
+                    <select id="modalTurma">
+                        <option value="">Aplicar a: Todas as Turmas</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="modalMateria">Matéria Alva</label>
+                    <select id="modalMateria">
+                        <option value="">Aplicar a: Todas as Matérias</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Critérios / Perguntas da Ficha</label>
+                    <div id="containerPerguntasModal">
+                        <!-- Linhas de perguntas adicionadas aqui -->
+                    </div>
+                    <button type="button" class="btn-secondary" onclick="adicionarLinhaPergunta()" style="width:100%; margin-top:0.5rem;">+ Adicionar Pergunta</button>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.5rem;">
+                    <button type="button" class="btn-secondary" onclick="fecharModalFicha()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Ficha</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
         const usuarioLogado = JSON.parse(localStorage.getItem('usuario') || localStorage.getItem('user') || '{}');
@@ -225,7 +267,7 @@
             if (e) e.target.classList.add('active');
             document.getElementById(`sec-${sec}`).classList.add('active');
 
-            if (sec === 'perguntas') carregarPerguntasECombos();
+            if (sec === 'fichas') carregarFichasGrid();
             if (sec === 'respostas') carregarRespostas();
             if (sec === 'turmas') carregarTurmas();
             if (sec === 'materias') carregarMaterias();
@@ -233,6 +275,7 @@
             if (sec === 'vinculos') carregarVinculosForm();
         }
 
+        // Dark Mode
         const themeBtn = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         const moonSvg = `<path d="M12.3 2a10 10 0 0 0 9.7 11.5 10 10 0 1 1-11.5-9.7z"/>`;
@@ -258,8 +301,70 @@
 
         function fazerLogout() { localStorage.clear(); window.location.href = 'index.html'; }
 
-        // CARREGAR FICHAS, PERGUNTAS E COMBOS
-        async function carregarPerguntasECombos() {
+        // GESTÃO DE MODAL DA FICHA
+        async function abrirModalFicha() {
+            const [turmas, mats] = await Promise.all([
+                fetch('/api/turmas').then(r => r.json()),
+                fetch('/api/materias').then(r => r.json())
+            ]);
+
+            document.getElementById('modalTurma').innerHTML = '<option value="">Aplicar a: Todas as Turmas</option>' + (turmas || []).map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
+            document.getElementById('modalMateria').innerHTML = '<option value="">Aplicar a: Todas as Matérias</option>' + (mats || []).map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+
+            document.getElementById('containerPerguntasModal').innerHTML = '';
+            adicionarLinhaPergunta(); // Adiciona ao menos uma por padrão
+            document.getElementById('modalFicha').classList.add('active');
+        }
+
+        function fecharModalFicha() {
+            document.getElementById('modalFicha').classList.remove('active');
+        }
+
+        function adicionarLinhaPergunta() {
+            const container = document.getElementById('containerPerguntasModal');
+            const div = document.createElement('div');
+            div.className = 'pergunta-row';
+            div.innerHTML = `
+                <input type="text" placeholder="Digite a pergunta ou critério..." required class="input-pergunta-texto">
+                <select class="select-pergunta-cat">
+                    <option value="Desempenho Acadêmico">Desempenho</option>
+                    <option value="Comportamento e Disciplina">Comportamento</option>
+                    <option value="Participação e Engajamento">Participação</option>
+                    <option value="Assiduidade e Pontualidade">Assiduidade</option>
+                    <option value="Geral">Geral</option>
+                </select>
+                <button type="button" class="btn-remove-row" onclick="this.parentElement.remove()">✕</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // SUBMETER NOVA FICHA COM TODAS AS PERGUNTAS
+        document.getElementById('formNovaFicha').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const turma_id = document.getElementById('modalTurma').value || null;
+            const materia_id = document.getElementById('modalMateria').value || null;
+
+            const rows = document.querySelectorAll('.pergunta-row');
+            for (let row of rows) {
+                const texto = row.querySelector('.input-pergunta-texto').value.trim();
+                const categoria = row.querySelector('.select-pergunta-cat').value;
+
+                if (texto) {
+                    await fetch('/api/perguntas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ texto, pergunta: texto, categoria, turma_id, materia_id })
+                    });
+                }
+            }
+
+            fecharModalFicha();
+            carregarFichasGrid();
+        });
+
+        // CARREGAR FICHA DE FORMA VISUAL (CARDS, SEM IDs TÉCNICOS)
+        async function carregarFichasGrid() {
+            const grid = document.getElementById('gridFichas');
             try {
                 const [pergRes, turmas, mats] = await Promise.all([
                     fetch('/api/perguntas').then(r => r.json()),
@@ -267,41 +372,29 @@
                     fetch('/api/materias').then(r => r.json())
                 ]);
 
-                document.getElementById('selectPerguntaTurma').innerHTML = '<option value="">Aplicar a: Todas as Turmas</option>' + (turmas || []).map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
-                document.getElementById('selectPerguntaMateria').innerHTML = '<option value="">Aplicar a: Todas as Matérias</option>' + (mats || []).map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+                if (!pergRes || pergRes.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.7; padding:2rem;">Nenhuma ficha cadastrada. Clique no botão acima para criar a primeira.</p>';
+                    return;
+                }
 
                 const turmaMap = Object.fromEntries((turmas || []).map(t => [t.id, t.nome]));
                 const matMap = Object.fromEntries((mats || []).map(m => [m.id, m.nome]));
 
-                const tbody = document.getElementById('tabelaPerguntas');
-                tbody.innerHTML = (pergRes || []).map(p => `
-                    <tr>
-                        <td>${p.id}</td>
-                        <td><strong>${p.texto || p.pergunta}</strong></td>
-                        <td><span class="badge-cat">${p.categoria || 'Geral'}</span></td>
-                        <td>${p.turma_id ? turmaMap[p.turma_id] : 'Todas'} / ${p.materia_id ? matMap[p.materia_id] : 'Todas'}</td>
-                        <td><button class="btn-delete" onclick="deletarItem('/api/perguntas/${p.id}', carregarPerguntasECombos)">Excluir</button></td>
-                    </tr>
+                grid.innerHTML = (pergRes || []).map(p => `
+                    <div class="ficha-card">
+                        <div>
+                            <div class="ficha-card-title">${p.texto || p.pergunta}</div>
+                            <div class="ficha-card-info"><strong>Turma:</strong> ${p.turma_id ? turmaMap[p.turma_id] : 'Todas as Turmas'}</div>
+                            <div class="ficha-card-info"><strong>Matéria:</strong> ${p.materia_id ? matMap[p.materia_id] : 'Todas as Matérias'}</div>
+                            <span class="badge-cat">${p.categoria || 'Geral'}</span>
+                        </div>
+                        <div class="ficha-card-actions">
+                            <button class="btn-delete" onclick="deletarItem('/api/perguntas/${p.id}', carregarFichasGrid)">Excluir Critério</button>
+                        </div>
+                    </div>
                 `).join('');
             } catch (err) { console.error(err); }
         }
-
-        document.getElementById('formPergunta').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const texto = document.getElementById('inputPerguntaTexto').value.trim();
-            const categoria = document.getElementById('selectPerguntaCategoria').value;
-            const turma_id = document.getElementById('selectPerguntaTurma').value || null;
-            const materia_id = document.getElementById('selectPerguntaMateria').value || null;
-
-            await fetch('/api/perguntas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ texto, pergunta: texto, categoria, turma_id, materia_id })
-            });
-
-            document.getElementById('inputPerguntaTexto').value = '';
-            carregarPerguntasECombos();
-        });
 
         // RESPOSTAS
         async function carregarRespostas() {
@@ -331,37 +424,23 @@
             } catch (err) { container.innerHTML = '<p>Erro ao carregar respostas.</p>'; }
         }
 
-        // PROFESSORES (COM TRAVA DE SEGURANÇA PARA AUTO-EXCLUSÃO)
+        // DEMAIS TABELAS
         async function carregarProfessores() {
-            const res = await fetch('/api/professores'); 
-            const data = await res.json();
-            
+            const res = await fetch('/api/professores'); const data = await res.json();
             document.getElementById('tabelaProfessores').innerHTML = data.map(p => {
-                const eOMesmoUsuario = String(p.id) === String(usuarioLogado.id) || (p.email && p.email === usuarioLogado.email);
-                const acaoExcluir = eOMesmoUsuario 
-                    ? '<span style="opacity: 0.6; font-size: 0.85rem; font-weight: 600;">(Você)</span>' 
-                    : `<button class="btn-delete" onclick="deletarItem('/api/professores/${p.id}', carregarProfessores)">Excluir</button>`;
-
-                return `
-                    <tr>
-                        <td>${p.id}</td>
-                        <td>${p.nome}</td>
-                        <td>${p.email || '-'}</td>
-                        <td>${p.tipo || 'professor'}</td>
-                        <td>${acaoExcluir}</td>
-                    </tr>
-                `;
+                const eOMesmo = String(p.id) === String(usuarioLogado.id) || (p.email && p.email === usuarioLogado.email);
+                return `<tr><td>${p.nome}</td><td>${p.email || '-'}</td><td>${p.tipo || 'professor'}</td><td>${eOMesmo ? '(Você)' : `<button class="btn-delete" onclick="deletarItem('/api/professores/${p.id}', carregarProfessores)">Excluir</button>`}</td></tr>`;
             }).join('');
         }
 
         async function carregarTurmas() {
             const res = await fetch('/api/turmas'); const data = await res.json();
-            document.getElementById('tabelaTurmas').innerHTML = data.map(t => `<tr><td>${t.id}</td><td>${t.nome}</td><td><button class="btn-delete" onclick="deletarItem('/api/turmas/${t.id}', carregarTurmas)">Excluir</button></td></tr>`).join('');
+            document.getElementById('tabelaTurmas').innerHTML = data.map(t => `<tr><td>${t.nome}</td><td><button class="btn-delete" onclick="deletarItem('/api/turmas/${t.id}', carregarTurmas)">Excluir</button></td></tr>`).join('');
         }
 
         async function carregarMaterias() {
             const res = await fetch('/api/materias'); const data = await res.json();
-            document.getElementById('tabelaMaterias').innerHTML = data.map(m => `<tr><td>${m.id}</td><td>${m.nome}</td><td><button class="btn-delete" onclick="deletarItem('/api/materias/${m.id}', carregarMaterias)">Excluir</button></td></tr>`).join('');
+            document.getElementById('tabelaMaterias').innerHTML = data.map(m => `<tr><td>${m.nome}</td><td><button class="btn-delete" onclick="deletarItem('/api/materias/${m.id}', carregarMaterias)">Excluir</button></td></tr>`).join('');
         }
 
         async function carregarVinculosForm() {
@@ -406,7 +485,7 @@
             carregarVinculosForm();
         });
 
-        carregarPerguntasECombos();
+        carregarFichasGrid();
     </script>
 </body>
 </html>
