@@ -10,19 +10,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-// Tratamento e limpeza da URL e Chave do Supabase
+// Sanitização das variáveis de ambiente do Supabase
 const rawUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
 const SUPABASE_URL = rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
 const SUPABASE_KEY = (process.env.SUPABASE_KEY || 'placeholder').trim();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Helper para encapsular handlers assíncronos
+// Wrapper para capturar erros assíncronos
 const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-// Helper centralizado para mapas relacionais
+// Mapeamento relacional de apoio
 async function buscarMapasRelacionais() {
     const [usersRes, turmasRes, matsRes, pergRes] = await Promise.all([
         supabase.from('usuarios').select('*'),
@@ -101,7 +101,7 @@ app.post('/api/auth/cadastro', asyncHandler(async (req, res) => {
 }));
 
 // ----------------------------------------------------
-// ROTAS DE PERGUNTAS / FICHAS (ÚNICAS E CONSOLIDADAS)
+// PERGUNTAS / FICHAS (SUPORTE A TEXTO_PERGUNTA, TEXTO E PERGUNTA)
 // ----------------------------------------------------
 app.get('/api/perguntas', asyncHandler(async (req, res) => {
     const { data, error } = await supabase.from('perguntas').select('*').order('id');
@@ -110,28 +110,32 @@ app.get('/api/perguntas', asyncHandler(async (req, res) => {
 }));
 
 app.post('/api/perguntas', asyncHandler(async (req, res) => {
-    const { texto, pergunta, categoria, turma_id, materia_id } = req.body;
-    const textoFinal = texto || pergunta;
+    const { texto, pergunta, texto_pergunta, categoria, turma_id, materia_id } = req.body;
+    const textoFinal = texto_pergunta || texto || pergunta;
     if (!textoFinal) return res.status(400).json({ error: 'O texto do critério é obrigatório.' });
 
-    const payload = {
-        texto: textoFinal,
-        categoria: categoria || 'Geral'
-    };
+    const basePayload = { categoria: categoria || 'Geral' };
+    if (turma_id) basePayload.turma_id = turma_id;
+    if (materia_id) basePayload.materia_id = materia_id;
 
-    if (turma_id) payload.turma_id = turma_id;
-    if (materia_id) payload.materia_id = materia_id;
-
-    // Tenta inserir na coluna 'texto'
+    // Tentativa 1: texto_pergunta (coluna NOT NULL principal)
+    let payload = { ...basePayload, texto_pergunta: textoFinal };
     let { data, error } = await supabase.from('perguntas').insert([payload]).select();
 
-    // Fallback caso a tabela use a coluna 'pergunta'
-    if (error && error.message.includes('texto')) {
-        delete payload.texto;
-        payload.pergunta = textoFinal;
-        const fallback = await supabase.from('perguntas').insert([payload]).select();
-        data = fallback.data;
-        error = fallback.error;
+    // Tentativa 2: texto
+    if (error && (error.message.includes('texto_pergunta') || error.code === 'PGRST204')) {
+        payload = { ...basePayload, texto: textoFinal };
+        const retry1 = await supabase.from('perguntas').insert([payload]).select();
+        data = retry1.data;
+        error = retry1.error;
+    }
+
+    // Tentativa 3: pergunta
+    if (error && (error.message.includes('texto') || error.code === 'PGRST204')) {
+        payload = { ...basePayload, pergunta: textoFinal };
+        const retry2 = await supabase.from('perguntas').insert([payload]).select();
+        data = retry2.data;
+        error = retry2.error;
     }
 
     if (error) throw error;
@@ -146,10 +150,8 @@ app.delete('/api/perguntas/:id', asyncHandler(async (req, res) => {
 }));
 
 // ----------------------------------------------------
-// OUTRAS ROTAS DA API
-// ----------------------------------------------------
-
 // VÍNCULOS
+// ----------------------------------------------------
 app.get('/api/vinculos', asyncHandler(async (req, res) => {
     const { data: vinculos, error } = await supabase.from('professor_turmas').select('*');
     if (error) throw error;
@@ -195,7 +197,9 @@ app.delete('/api/vinculos/:id', asyncHandler(async (req, res) => {
     res.json({ success: true });
 }));
 
-// TURMAS
+// ----------------------------------------------------
+// TURMAS, MATÉRIAS, PROFESSORES E RESPOSTAS
+// ----------------------------------------------------
 app.get('/api/turmas', asyncHandler(async (req, res) => {
     const { data, error } = await supabase.from('turmas').select('*').order('id');
     if (error) throw error;
@@ -217,7 +221,6 @@ app.delete('/api/turmas/:id', asyncHandler(async (req, res) => {
     res.json({ success: true });
 }));
 
-// MATÉRIAS
 app.get('/api/materias', asyncHandler(async (req, res) => {
     const { data, error } = await supabase.from('materias').select('*').order('id');
     if (error) throw error;
@@ -239,7 +242,6 @@ app.delete('/api/materias/:id', asyncHandler(async (req, res) => {
     res.json({ success: true });
 }));
 
-// PROFESSORES / USUÁRIOS
 app.get('/api/professores', asyncHandler(async (req, res) => {
     const { data, error } = await supabase.from('usuarios').select('*').order('id');
     if (error) throw error;
@@ -260,7 +262,6 @@ app.delete('/api/professores/:id', asyncHandler(async (req, res) => {
     res.json({ success: true });
 }));
 
-// RESPOSTAS
 app.get('/api/respostas', asyncHandler(async (req, res) => {
     const { data: respostas, error } = await supabase.from('respostas_pre_conselho').select('*');
     if (error) throw error;
@@ -277,9 +278,7 @@ app.get('/api/respostas', asyncHandler(async (req, res) => {
     res.json(completas);
 }));
 
-// ----------------------------------------------------
-// TRATAMENTO DE ERROS E ROTA DE FALLBACK
-// ----------------------------------------------------
+// Fallback de erro em JSON para a API
 app.use('/api', (req, res) => {
     res.status(404).json({ error: `Rota da API não encontrada: ${req.method} ${req.originalUrl}` });
 });

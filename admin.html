@@ -134,7 +134,6 @@
             <button class="nav-tab-btn" onclick="switchSection(event, 'vinculos')">Vínculos</button>
         </div>
 
-        <!-- ABA FICHAS -->
         <div id="sec-fichas" class="tab-section active">
             <div class="section-header-flex">
                 <div>
@@ -146,13 +145,11 @@
             <div id="gridFichas" class="fichas-grid"></div>
         </div>
 
-        <!-- ABA RESPOSTAS -->
         <div id="sec-respostas" class="tab-section">
             <div class="section-title">Respostas Submetidas pelos Professores</div>
             <div id="containerRespostas">Carregando respostas...</div>
         </div>
 
-        <!-- ABA TURMAS -->
         <div id="sec-turmas" class="tab-section">
             <div class="section-title">Gerenciamento de Turmas</div>
             <form id="formTurma" style="display:flex; gap:1rem; margin-bottom:1rem;">
@@ -162,7 +159,6 @@
             <table><thead><tr><th>Nome da Turma</th><th>Ações</th></tr></thead><tbody id="tabelaTurmas"></tbody></table>
         </div>
 
-        <!-- ABA MATÉRIAS -->
         <div id="sec-materias" class="tab-section">
             <div class="section-title">Gerenciamento de Matérias</div>
             <form id="formMateria" style="display:flex; gap:1rem; margin-bottom:1rem;">
@@ -172,7 +168,6 @@
             <table><thead><tr><th>Nome da Matéria</th><th>Ações</th></tr></thead><tbody id="tabelaMaterias"></tbody></table>
         </div>
 
-        <!-- ABA PROFESSORES -->
         <div id="sec-professores" class="tab-section">
             <div class="section-title">Professores Cadastrados</div>
             <form id="formProfessor" style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
@@ -183,7 +178,6 @@
             <table><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Ações</th></tr></thead><tbody id="tabelaProfessores"></tbody></table>
         </div>
 
-        <!-- ABA VÍNCULOS -->
         <div id="sec-vinculos" class="tab-section">
             <div class="section-title">Vincular Professor a Turma e Matéria</div>
             <form id="formVinculo" style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
@@ -196,7 +190,6 @@
         </div>
     </main>
 
-    <!-- MODAL DE CRIAR FICHA -->
     <div id="modalFicha" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-title">Criar Nova Ficha Avaliativa</div>
@@ -226,7 +219,6 @@
         const usuarioLogado = JSON.parse(localStorage.getItem('usuario') || localStorage.getItem('user') || '{}');
         document.getElementById('userBadge').textContent = usuarioLogado.nome || 'Administrador';
 
-        // --- UTILS REAPROVEITÁVEIS PARA API ---
         async function requestAPI(url, options = {}) {
             try {
                 const config = {
@@ -254,7 +246,6 @@
             if (res) callback();
         }
 
-        // --- GERENCIAMENTO DE NAVEGAÇÃO E TEMA ---
         function switchSection(e, sec) {
             document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
@@ -292,7 +283,6 @@
 
         function fazerLogout() { localStorage.clear(); window.location.href = 'index.html'; }
 
-        // --- CARREGADORES E COMPONENTES ---
         async function abrirModalFicha() {
             const [turmas, mats] = await Promise.all([
                 requestAPI('/api/turmas'),
@@ -339,7 +329,7 @@
                 if (texto) {
                     await requestAPI('/api/perguntas', {
                         method: 'POST',
-                        body: { texto, pergunta: texto, categoria, turma_id, materia_id }
+                        body: { texto_pergunta: texto, texto: texto, pergunta: texto, categoria, turma_id, materia_id }
                     });
                 }
             }
@@ -367,7 +357,7 @@
             grid.innerHTML = (pergRes || []).map(p => `
                 <div class="ficha-card">
                     <div>
-                        <div class="ficha-card-title">${p.texto || p.pergunta}</div>
+                        <div class="ficha-card-title">${p.texto_pergunta || p.texto || p.pergunta || 'Critério Sem Texto'}</div>
                         <div class="ficha-card-info"><strong>Turma:</strong> ${p.turma_id ? turmaMap[p.turma_id] : 'Todas as Turmas'}</div>
                         <div class="ficha-card-info"><strong>Matéria:</strong> ${p.materia_id ? matMap[p.materia_id] : 'Todas as Matérias'}</div>
                         <span class="badge-cat">${p.categoria || 'Geral'}</span>
@@ -394,7 +384,7 @@
                     <div><strong>Professor:</strong> ${r.professores?.nome || 'Não identificado'}</div>
                     <div class="resposta-item">
                         <span class="badge-cat" style="margin-bottom:4px;">${r.perguntas?.categoria || 'Avaliação'}</span><br>
-                        <strong>Critério:</strong> ${r.perguntas?.texto || r.perguntas?.pergunta || 'Pergunta'}<br>
+                        <strong>Critério:</strong> ${r.perguntas?.texto_pergunta || r.perguntas?.texto || r.perguntas?.pergunta || 'Pergunta'}<br>
                         <strong>Resposta:</strong> ${r.resposta || r.texto_resposta || 'Sem resposta'}
                     </div>
                 </div>
@@ -435,7 +425,6 @@
             document.getElementById('tabelaVinculos').innerHTML = (vinculos || []).map(v => `<tr><td>${v.professores?.nome || '-'}</td><td>${v.turmas?.nome || '-'}</td><td>${v.materias?.nome || '-'}</td></tr>`).join('');
         }
 
-        // --- HANDLERS DE FORMULÁRIOS ---
         function bindFormSubmit(formId, inputId, endpoint, reloadFn) {
             document.getElementById(formId).addEventListener('submit', async (e) => {
                 e.preventDefault();
