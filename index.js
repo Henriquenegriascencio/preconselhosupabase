@@ -1,4 +1,10 @@
-require('dotenv').config();
+// Carrega o dotenv apenas se ele estiver instalado (uso local)
+try {
+    require('dotenv').config();
+} catch (e) {
+    // No Render, as variáveis são lidas do próprio painel
+}
+
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
