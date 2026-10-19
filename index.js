@@ -10,8 +10,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'placeholder';
+// Tratamento e limpeza da URL do Supabase para evitar 'Invalid path specified'
+let rawUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
+const SUPABASE_URL = rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+const SUPABASE_KEY = (process.env.SUPABASE_KEY || 'placeholder').trim();
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -32,7 +35,6 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de utilizador.' });
         }
 
-        // Busca no banco de dados
         const { data: usuarios, error } = await supabase.from('usuarios').select('*');
         if (error) {
             return res.status(500).json({ success: false, error: `Erro no Supabase: ${error.message}` });
@@ -52,7 +54,6 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // Login de fallback manual para admin se for a primeira vez
         if (tipoSolicitado === 'admin' || inputLower.includes('admin')) {
             return res.json({
                 success: true,
@@ -69,7 +70,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// CADASTRO (ENVIO DIRETO E TRANSPARENTE AO SUPABASE)
+// CADASTRO
 // ----------------------------------------------------
 app.get('/api/auth/cadastro', (req, res) => res.redirect('/'));
 
@@ -89,14 +90,13 @@ app.post('/api/auth/cadastro', async (req, res) => {
         const tipoFinal = isAdmin ? 'admin' : 'professor';
         const emailFinal = email || `${nome.toLowerCase().replace(/\s+/g, '')}@escola.com`;
 
-        // Tenta inserir no Supabase e exibe o erro exato caso falhe
         const { data, error } = await supabase
             .from('usuarios')
             .insert([{ nome, email: emailFinal, senha, tipo: tipoFinal }])
             .select();
 
         if (error) {
-            console.error('Erro na inserção do Supabase:', error);
+            console.error('Erro no Supabase:', error);
             return res.status(400).json({ success: false, error: `Falha ao gravar no Supabase: ${error.message}` });
         }
 
@@ -113,7 +113,7 @@ app.post('/api/auth/cadastro', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// ROTAS DE CONSULTA E GESTÃO
+// DEMAIS ROTAS DA API
 // ----------------------------------------------------
 app.get('/api/professor/turmas/:id', async (req, res) => {
     try {
