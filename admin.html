@@ -50,12 +50,7 @@
             --table-header-bg: #1e1e1e;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
         body {
             background-color: var(--bg-color);
@@ -67,26 +62,18 @@
         }
 
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 2rem;
-            background-color: var(--card-bg);
-            border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem;
+            background-color: var(--card-bg); border-bottom: 1px solid var(--border-color);
         }
 
         .header-title { font-size: 1.25rem; font-weight: 700; color: var(--primary-blue); }
         .header-actions { display: flex; align-items: center; gap: 1rem; }
         .user-badge { font-size: 0.85rem; font-weight: 600; background: var(--primary-blue); color: #fff; padding: 0.3rem 0.8rem; border-radius: 20px; }
 
-        .icon-btn {
-            background: none; border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; cursor: pointer; color: var(--text-color);
-        }
+        .icon-btn { background: none; border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; cursor: pointer; color: var(--text-color); }
         .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
-        .btn-logout {
-            background-color: var(--danger-red); color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer;
-        }
+        .btn-logout { background-color: var(--danger-red); color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
 
         main { flex: 1; padding: 2rem; max-width: 1200px; width: 100%; margin: 0 auto; }
 
@@ -96,20 +83,16 @@
         }
         .nav-tab-btn.active { opacity: 1; border-bottom-color: var(--primary-blue); color: var(--primary-blue); }
 
-        .tab-section {
-            display: none; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow);
-        }
+        .tab-section { display: none; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow); }
         .tab-section.active { display: block; }
         .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--primary-blue); }
 
         .form-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
         .form-row input, .form-row select {
-            flex: 1; min-width: 200px; padding: 0.65rem 0.8rem; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); outline: none;
+            flex: 1; min-width: 180px; padding: 0.65rem 0.8rem; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); outline: none;
         }
 
-        .btn-primary {
-            background-color: var(--primary-blue); color: #ffffff; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer;
-        }
+        .btn-primary { background-color: var(--primary-blue); color: #ffffff; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
         .btn-primary:hover { background-color: var(--primary-hover); }
 
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
@@ -118,9 +101,11 @@
 
         .btn-delete { background-color: var(--danger-red); color: white; border: none; padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
 
-        .resposta-card {
-            border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background-color: var(--input-bg);
+        .badge-cat {
+            display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; background-color: var(--primary-blue); color: white;
         }
+
+        .resposta-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background-color: var(--input-bg); }
         .resposta-header { font-weight: 700; color: var(--primary-blue); margin-bottom: 0.5rem; }
         .resposta-item { margin-top: 0.5rem; padding-left: 0.5rem; border-left: 3px solid var(--primary-blue); }
     </style>
@@ -140,7 +125,7 @@
 
     <main>
         <div class="nav-tabs">
-            <button class="nav-tab-btn active" onclick="switchSection(event, 'perguntas')">Criar Fichas / Perguntas</button>
+            <button class="nav-tab-btn active" onclick="switchSection(event, 'perguntas')">Montar Ficha Avaliativa</button>
             <button class="nav-tab-btn" onclick="switchSection(event, 'respostas')">Respostas dos Professores</button>
             <button class="nav-tab-btn" onclick="switchSection(event, 'turmas')">Turmas</button>
             <button class="nav-tab-btn" onclick="switchSection(event, 'materias')">Matérias</button>
@@ -148,18 +133,33 @@
             <button class="nav-tab-btn" onclick="switchSection(event, 'vinculos')">Vínculos</button>
         </div>
 
-        <!-- ABA 1: CRIAR PERGUNTAS / FICHAS DE AVALIAÇÃO -->
+        <!-- ABA 1: CONSTRUTOR COMPLETO DE FICHAS AVALIATIVAS -->
         <div id="sec-perguntas" class="tab-section active">
-            <div class="section-title">Cadastrar Pergunta para Ficha de Pré-Conselho</div>
+            <div class="section-title">Criar Pergunta / Item Avaliativo</div>
             <form id="formPergunta" class="form-row">
-                <input type="text" id="inputPerguntaTexto" placeholder="Digite a pergunta da ficha de avaliação..." required>
-                <button type="submit" class="btn-primary">Adicionar Pergunta</button>
+                <input type="text" id="inputPerguntaTexto" placeholder="Ex: Como avalia o engajamento geral da turma?" required style="flex: 2;">
+                
+                <select id="selectPerguntaCategoria" required>
+                    <option value="Desempenho Acadêmico">Desempenho Acadêmico</option>
+                    <option value="Comportamento e Disciplina">Comportamento e Disciplina</option>
+                    <option value="Participação e Engajamento">Participação e Engajamento</option>
+                    <option value="Assiduidade e Pontualidade">Assiduidade e Pontualidade</option>
+                    <option value="Geral">Geral</option>
+                </select>
+
+                <select id="selectPerguntaTurma"><option value="">Aplicar a: Todas as Turmas</option></select>
+                <select id="selectPerguntaMateria"><option value="">Aplicar a: Todas as Matérias</option></select>
+
+                <button type="submit" class="btn-primary">Adicionar à Ficha</button>
             </form>
+
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Pergunta</th>
+                        <th>Pergunta / Critério</th>
+                        <th>Categoria</th>
+                        <th>Escopo (Turma / Matéria)</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -167,13 +167,13 @@
             </table>
         </div>
 
-        <!-- ABA 2: VISUALIZAR RESPOSTAS DOS PROFESSORES -->
+        <!-- ABA 2: RESPOSTAS SUBMETIDAS -->
         <div id="sec-respostas" class="tab-section">
             <div class="section-title">Respostas Submetidas pelos Professores</div>
             <div id="containerRespostas">Carregando respostas...</div>
         </div>
 
-        <!-- OUTRAS ABAS DE GESTÃO -->
+        <!-- OUTRAS ABAS -->
         <div id="sec-turmas" class="tab-section">
             <div class="section-title">Gerenciamento de Turmas</div>
             <form id="formTurma" class="form-row">
@@ -225,7 +225,7 @@
             if (e) e.target.classList.add('active');
             document.getElementById(`sec-${sec}`).classList.add('active');
 
-            if (sec === 'perguntas') carregarPerguntas();
+            if (sec === 'perguntas') carregarPerguntasECombos();
             if (sec === 'respostas') carregarRespostas();
             if (sec === 'turmas') carregarTurmas();
             if (sec === 'materias') carregarMaterias();
@@ -258,17 +258,29 @@
 
         function fazerLogout() { localStorage.clear(); window.location.href = 'index.html'; }
 
-        // PERGUNTAS / FICHAS
-        async function carregarPerguntas() {
+        // CARREGAR FICHAS, PERGUNTAS E COMBOS
+        async function carregarPerguntasECombos() {
             try {
-                const res = await fetch('/api/perguntas');
-                const perguntas = await res.json();
+                const [pergRes, turmas, mats] = await Promise.all([
+                    fetch('/api/perguntas').then(r => r.json()),
+                    fetch('/api/turmas').then(r => r.json()),
+                    fetch('/api/materias').then(r => r.json())
+                ]);
+
+                document.getElementById('selectPerguntaTurma').innerHTML = '<option value="">Aplicar a: Todas as Turmas</option>' + (turmas || []).map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
+                document.getElementById('selectPerguntaMateria').innerHTML = '<option value="">Aplicar a: Todas as Matérias</option>' + (mats || []).map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+
+                const turmaMap = Object.fromEntries((turmas || []).map(t => [t.id, t.nome]));
+                const matMap = Object.fromEntries((mats || []).map(m => [m.id, m.nome]));
+
                 const tbody = document.getElementById('tabelaPerguntas');
-                tbody.innerHTML = (perguntas || []).map(p => `
+                tbody.innerHTML = (pergRes || []).map(p => `
                     <tr>
                         <td>${p.id}</td>
-                        <td>${p.texto || p.pergunta}</td>
-                        <td><button class="btn-delete" onclick="deletarItem('/api/perguntas/${p.id}', carregarPerguntas)">Excluir</button></td>
+                        <td><strong>${p.texto || p.pergunta}</strong></td>
+                        <td><span class="badge-cat">${p.categoria || 'Geral'}</span></td>
+                        <td>${p.turma_id ? turmaMap[p.turma_id] : 'Todas'} / ${p.materia_id ? matMap[p.materia_id] : 'Todas'}</td>
+                        <td><button class="btn-delete" onclick="deletarItem('/api/perguntas/${p.id}', carregarPerguntasECombos)">Excluir</button></td>
                     </tr>
                 `).join('');
             } catch (err) { console.error(err); }
@@ -277,12 +289,21 @@
         document.getElementById('formPergunta').addEventListener('submit', async (e) => {
             e.preventDefault();
             const texto = document.getElementById('inputPerguntaTexto').value.trim();
-            await fetch('/api/perguntas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto, pergunta: texto }) });
+            const categoria = document.getElementById('selectPerguntaCategoria').value;
+            const turma_id = document.getElementById('selectPerguntaTurma').value || null;
+            const materia_id = document.getElementById('selectPerguntaMateria').value || null;
+
+            await fetch('/api/perguntas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ texto, pergunta: texto, categoria, turma_id, materia_id })
+            });
+
             document.getElementById('inputPerguntaTexto').value = '';
-            carregarPerguntas();
+            carregarPerguntasECombos();
         });
 
-        // RESPOSTAS ENVIADAS
+        // RESPOSTAS
         async function carregarRespostas() {
             const container = document.getElementById('containerRespostas');
             try {
@@ -301,17 +322,38 @@
                         </div>
                         <div><strong>Professor:</strong> ${r.professores?.nome || 'Não identificado'}</div>
                         <div class="resposta-item">
-                            <strong>Pergunta:</strong> ${r.perguntas?.texto || r.perguntas?.pergunta || 'Ficha'}<br>
+                            <span class="badge-cat" style="margin-bottom:4px;">${r.perguntas?.categoria || 'Avaliação'}</span><br>
+                            <strong>Critério:</strong> ${r.perguntas?.texto || r.perguntas?.pergunta || 'Pergunta'}<br>
                             <strong>Resposta:</strong> ${r.resposta || r.texto_resposta || 'Sem resposta'}
                         </div>
                     </div>
                 `).join('');
-            } catch (err) {
-                container.innerHTML = '<p>Erro ao carregar as respostas.</p>';
-            }
+            } catch (err) { container.innerHTML = '<p>Erro ao carregar respostas.</p>'; }
         }
 
-        // OUTRAS REQUISIÇÕES
+        // PROFESSORES (COM TRAVA DE SEGURANÇA PARA AUTO-EXCLUSÃO)
+        async function carregarProfessores() {
+            const res = await fetch('/api/professores'); 
+            const data = await res.json();
+            
+            document.getElementById('tabelaProfessores').innerHTML = data.map(p => {
+                const eOMesmoUsuario = String(p.id) === String(usuarioLogado.id) || (p.email && p.email === usuarioLogado.email);
+                const acaoExcluir = eOMesmoUsuario 
+                    ? '<span style="opacity: 0.6; font-size: 0.85rem; font-weight: 600;">(Você)</span>' 
+                    : `<button class="btn-delete" onclick="deletarItem('/api/professores/${p.id}', carregarProfessores)">Excluir</button>`;
+
+                return `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.nome}</td>
+                        <td>${p.email || '-'}</td>
+                        <td>${p.tipo || 'professor'}</td>
+                        <td>${acaoExcluir}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
         async function carregarTurmas() {
             const res = await fetch('/api/turmas'); const data = await res.json();
             document.getElementById('tabelaTurmas').innerHTML = data.map(t => `<tr><td>${t.id}</td><td>${t.nome}</td><td><button class="btn-delete" onclick="deletarItem('/api/turmas/${t.id}', carregarTurmas)">Excluir</button></td></tr>`).join('');
@@ -320,11 +362,6 @@
         async function carregarMaterias() {
             const res = await fetch('/api/materias'); const data = await res.json();
             document.getElementById('tabelaMaterias').innerHTML = data.map(m => `<tr><td>${m.id}</td><td>${m.nome}</td><td><button class="btn-delete" onclick="deletarItem('/api/materias/${m.id}', carregarMaterias)">Excluir</button></td></tr>`).join('');
-        }
-
-        async function carregarProfessores() {
-            const res = await fetch('/api/professores'); const data = await res.json();
-            document.getElementById('tabelaProfessores').innerHTML = data.map(p => `<tr><td>${p.id}</td><td>${p.nome}</td><td>${p.email || '-'}</td><td>${p.tipo || 'professor'}</td><td><button class="btn-delete" onclick="deletarItem('/api/professores/${p.id}', carregarProfessores)">Excluir</button></td></tr>`).join('');
         }
 
         async function carregarVinculosForm() {
@@ -341,7 +378,7 @@
         }
 
         async function deletarItem(url, callback) {
-            if (!confirm('Deseja realmente excluir?')) return;
+            if (!confirm('Deseja realmente excluir este item?')) return;
             await fetch(url, { method: 'DELETE' }); callback();
         }
 
@@ -369,7 +406,7 @@
             carregarVinculosForm();
         });
 
-        carregarPerguntas();
+        carregarPerguntasECombos();
     </script>
 </body>
 </html>

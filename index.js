@@ -341,9 +341,20 @@ app.get('/api/perguntas', async (req, res) => {
 
 app.post('/api/perguntas', async (req, res) => {
     try {
-        const { texto, pergunta } = req.body;
+        const { texto, pergunta, categoria, turma_id, materia_id } = req.body;
         const textoFinal = texto || pergunta;
-        const { data, error } = await supabase.from('perguntas').insert([{ texto: textoFinal, pergunta: textoFinal }]).select();
+        const catFinal = categoria || 'Geral';
+
+        const payload = {
+            texto: textoFinal,
+            pergunta: textoFinal,
+            categoria: catFinal
+        };
+
+        if (turma_id) payload.turma_id = turma_id;
+        if (materia_id) payload.materia_id = materia_id;
+
+        const { data, error } = await supabase.from('perguntas').insert([payload]).select();
         if (error) throw error;
         res.json(data[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
