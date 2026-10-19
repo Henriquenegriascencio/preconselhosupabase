@@ -1,17 +1,21 @@
-// Carrega o dotenv apenas se ele estiver instalado (uso local)
+// Tenta carregar o dotenv apenas em ambiente local
 try {
     require('dotenv').config();
 } catch (e) {
-    // No Render, as variáveis são lidas do próprio painel
+    // No Render, as variáveis são lidas diretamente do painel Environment
 }
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Permite servir os ficheiros estáticos do site (HTML, CSS, JS)
+app.use(express.static(__dirname));
 
 // Validação de segurança das variáveis de ambiente
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -27,10 +31,10 @@ const supabase = createClient(
 );
 
 // ----------------------------------------------------
-// ROTA RAIZ (Verificação de Status)
+// ROTA RAIZ (Abre diretamente o index.html)
 // ----------------------------------------------------
 app.get('/', (req, res) => {
-    res.json({ status: 'API do Pré-Conselho está ativa e operacional!' });
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------
@@ -184,7 +188,7 @@ app.post('/api/vinculos', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// RESPOSTAS (Cruzamento seguro em memória para evitar erro PGRST200)
+// RESPOSTAS
 // ----------------------------------------------------
 app.get('/api/respostas', async (req, res) => {
     try {
@@ -219,7 +223,7 @@ app.get('/api/respostas', async (req, res) => {
 
 app.post('/api/respostas', async (req, res) => {
     try {
-        const respostasArray = req.body; // Espera um array de respostas
+        const respostasArray = req.body;
         const { data, error } = await supabase
             .from('respostas')
             .insert(respostasArray)
@@ -236,5 +240,5 @@ app.post('/api/respostas', async (req, res) => {
 // ----------------------------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Servidor a rodar na porta ${PORT}`);
 });
