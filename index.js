@@ -101,7 +101,52 @@ app.post('/api/auth/cadastro', asyncHandler(async (req, res) => {
 }));
 
 // ----------------------------------------------------
-// ROTAS ESPECÍFICAS DA API
+// ROTAS DE PERGUNTAS / FICHAS (ÚNICAS E CONSOLIDADAS)
+// ----------------------------------------------------
+app.get('/api/perguntas', asyncHandler(async (req, res) => {
+    const { data, error } = await supabase.from('perguntas').select('*').order('id');
+    if (error) throw error;
+    res.json(data || []);
+}));
+
+app.post('/api/perguntas', asyncHandler(async (req, res) => {
+    const { texto, pergunta, categoria, turma_id, materia_id } = req.body;
+    const textoFinal = texto || pergunta;
+    if (!textoFinal) return res.status(400).json({ error: 'O texto do critério é obrigatório.' });
+
+    const payload = {
+        texto: textoFinal,
+        categoria: categoria || 'Geral'
+    };
+
+    if (turma_id) payload.turma_id = turma_id;
+    if (materia_id) payload.materia_id = materia_id;
+
+    // Tenta inserir na coluna 'texto'
+    let { data, error } = await supabase.from('perguntas').insert([payload]).select();
+
+    // Fallback caso a tabela use a coluna 'pergunta'
+    if (error && error.message.includes('texto')) {
+        delete payload.texto;
+        payload.pergunta = textoFinal;
+        const fallback = await supabase.from('perguntas').insert([payload]).select();
+        data = fallback.data;
+        error = fallback.error;
+    }
+
+    if (error) throw error;
+    res.json(data ? data[0] : { success: true });
+}));
+
+app.delete('/api/perguntas/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { error } = await supabase.from('perguntas').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ success: true });
+}));
+
+// ----------------------------------------------------
+// OUTRAS ROTAS DA API
 // ----------------------------------------------------
 
 // VÍNCULOS
@@ -215,38 +260,6 @@ app.delete('/api/professores/:id', asyncHandler(async (req, res) => {
     res.json({ success: true });
 }));
 
-// PERGUNTAS / FICHAS
-app.get('/api/perguntas', asyncHandler(async (req, res) => {
-    const { data, error } = await supabase.from('perguntas').select('*').order('id');
-    if (error) throw error;
-    res.json(data || []);
-}));
-
-app.post('/api/perguntas', asyncHandler(async (req, res) => {
-    const { texto, pergunta, categoria, turma_id, materia_id } = req.body;
-    const textoFinal = texto || pergunta;
-    if (!textoFinal) return res.status(400).json({ error: 'O texto do critério é obrigatório.' });
-
-    const payload = {
-        texto: textoFinal,
-        pergunta: textoFinal,
-        categoria: categoria || 'Geral'
-    };
-    if (turma_id) payload.turma_id = turma_id;
-    if (materia_id) payload.materia_id = materia_id;
-
-    const { data, error } = await supabase.from('perguntas').insert([payload]).select();
-    if (error) throw error;
-    res.json(data[0]);
-}));
-
-app.delete('/api/perguntas/:id', asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { error } = await supabase.from('perguntas').delete().eq('id', id);
-    if (error) throw error;
-    res.json({ success: true });
-}));
-
 // RESPOSTAS
 app.get('/api/respostas', asyncHandler(async (req, res) => {
     const { data: respostas, error } = await supabase.from('respostas_pre_conselho').select('*');
@@ -265,7 +278,7 @@ app.get('/api/respostas', asyncHandler(async (req, res) => {
 }));
 
 // ----------------------------------------------------
-// FALLBACK PARA EVITAR RETORNO DE HTML EM REQUISIÇÕES DE API
+// TRATAMENTO DE ERROS E ROTA DE FALLBACK
 // ----------------------------------------------------
 app.use('/api', (req, res) => {
     res.status(404).json({ error: `Rota da API não encontrada: ${req.method} ${req.originalUrl}` });
@@ -277,4 +290,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor a rodar na porta ${PORT}`));
