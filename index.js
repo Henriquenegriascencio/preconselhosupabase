@@ -38,6 +38,48 @@ app.get('/', (req, res) => {
 });
 
 // ----------------------------------------------------
+// AUTENTICAÇÃO / LOGIN
+// ----------------------------------------------------
+// Evita erro ao tentar aceder a /api/auth/login via GET no navegador
+app.get('/api/auth/login', (req, res) => {
+    res.redirect('/');
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, senha, tipo } = req.body;
+
+        // Login de Administrador
+        if (tipo === 'admin' || email === 'admin@escola.com' || email === 'admin') {
+            return res.json({
+                success: true,
+                usuario: { nome: 'Administrador', tipo: 'admin', email }
+            });
+        }
+
+        // Login de Professor (procura o e-mail na tabela 'professores' do Supabase)
+        const { data: prof, error } = await supabase
+            .from('professores')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!prof) {
+            return res.status(401).json({ error: 'Professor não encontrado com este e-mail.' });
+        }
+
+        return res.json({
+            success: true,
+            usuario: { id: prof.id, nome: prof.nome, email: prof.email, tipo: 'professor' }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ----------------------------------------------------
 // TURMAS
 // ----------------------------------------------------
 app.get('/api/turmas', async (req, res) => {
