@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve ficheiros estáticos (HTML, CSS, JS)
+// Arquivos estáticos (HTML, CSS, JS)
 app.use(express.static(__dirname));
 
 // Supabase
@@ -43,7 +43,7 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de usuário.' });
         }
 
-        // 1. ADMINISTRADOR
+        // 1. PERFIL: ADMINISTRADOR
         if (tipoSolicitado === 'admin' || inputLower.includes('admin')) {
             return res.json({
                 success: true,
@@ -57,7 +57,7 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // 2. PROFESSOR
+        // 2. PERFIL: PROFESSOR (Busca no Supabase)
         let profEncontrado = null;
         try {
             const { data: professores } = await supabase.from('professores').select('*');
@@ -84,6 +84,7 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
+        // Retorno para Professor novo/não encontrado no banco
         return res.json({
             success: true,
             usuario: { 
@@ -177,7 +178,56 @@ app.post('/api/auth/cadastro', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// FICHAS E VÍNCULOS DO PROFESSOR (ROTA ADICIONADA)
+// TURMAS E MATÉRIAS DO PROFESSOR (ROTA RESOLVE O 404)
+// ----------------------------------------------------
+app.get('/api/professor/turmas/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const [vinculosRes, turmasRes, matsRes] = await Promise.all([
+            supabase.from('vinculos').select('*'),
+            supabase.from('turmas').select('*'),
+            supabase.from('materias').select('*')
+        ]);
+
+        const vinculos = vinculosRes.data || [];
+        const turmas = turmasRes.data || [];
+        const mats = matsRes.data || [];
+
+        const turmaMap = Object.fromEntries(turmas.map(t => [t.id, t]));
+        const matMap = Object.fromEntries(mats.map(m => [m.id, m]));
+
+        // Filtra os vínculos pelo ID do professor (ou traz todos se for admin)
+        const filtrados = (id === 'admin' || id.includes('admin')) 
+            ? vinculos 
+            : vinculos.filter(v => String(v.professor_id) === String(id));
+
+        let resultado = filtrados.map(v => ({
+            id: v.id,
+            turma_id: v.turma_id,
+            materia_id: v.materia_id,
+            turmas: turmaMap[v.turma_id] || { nome: 'Turma' },
+            materias: matMap[v.materia_id] || { nome: 'Matéria' }
+        }));
+
+        // Se o professor não tiver vínculos cadastrados ainda, devolve a lista de turmas existentes
+        if (resultado.length === 0 && turmas.length > 0) {
+            resultado = turmas.map(t => ({
+                turma_id: t.id,
+                materia_id: mats[0]?.id || null,
+                turmas: t,
+                materias: mats[0] || { nome: 'Matéria' }
+            }));
+        }
+
+        res.json(resultado);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ----------------------------------------------------
+// FICHAS DO PROFESSOR
 // ----------------------------------------------------
 app.get('/api/professor/fichas/:id', async (req, res) => {
     try {
@@ -199,7 +249,6 @@ app.get('/api/professor/fichas/:id', async (req, res) => {
         const turmaMap = Object.fromEntries(turmas.map(t => [t.id, t]));
         const matMap = Object.fromEntries(mats.map(m => [m.id, m]));
 
-        // Se for admin, retorna todas as fichas; caso contrário, filtra pelo ID do professor
         const filtrados = (id === 'admin' || id.includes('admin')) 
             ? vinculos 
             : vinculos.filter(v => String(v.professor_id) === String(id));
@@ -423,5 +472,5 @@ app.post('/api/respostas', async (req, res) => {
 // ----------------------------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor a rodar na porta ${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
