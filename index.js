@@ -267,7 +267,7 @@ app.get('/api/respostas', asyncHandler(async (req, res) => {
 // ----------------------------------------------------
 // FALLBACK PARA EVITAR RETORNO DE HTML EM REQUISIÇÕES DE API
 // ----------------------------------------------------
-app.use('/api/*', (req, res) => {
+app.use('/api', (req, res) => {
     res.status(404).json({ error: `Rota da API não encontrada: ${req.method} ${req.originalUrl}` });
 });
 
