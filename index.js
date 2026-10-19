@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Arquivos estáticos (HTML, CSS, JS)
+// Serve ficheiros estáticos (HTML, CSS, JS)
 app.use(express.static(__dirname));
 
 // Supabase
@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / LOGIN (DISTINÇÃO RÍGIDA ADMIN / PROFESSOR)
+// AUTENTICAÇÃO / LOGIN
 // ----------------------------------------------------
 app.get('/api/auth/login', (req, res) => {
     res.redirect('/');
@@ -43,7 +43,7 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Informe o e-mail ou nome de usuário.' });
         }
 
-        // 1. PERFIL: ADMINISTRADOR
+        // 1. ADMINISTRADOR
         if (tipoSolicitado === 'admin' || inputLower.includes('admin')) {
             return res.json({
                 success: true,
@@ -57,7 +57,7 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // 2. PERFIL: PROFESSOR (Busca no Supabase)
+        // 2. PROFESSOR
         let profEncontrado = null;
         try {
             const { data: professores } = await supabase.from('professores').select('*');
@@ -84,7 +84,6 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // Retorno para Professor novo/não encontrado no banco
         return res.json({
             success: true,
             usuario: { 
@@ -102,7 +101,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// AUTENTICAÇÃO / CADASTRO (DISTINÇÃO RÍGIDA ADMIN / PROFESSOR)
+// AUTENTICAÇÃO / CADASTRO
 // ----------------------------------------------------
 app.get('/api/auth/cadastro', (req, res) => {
     res.redirect('/');
@@ -122,7 +121,6 @@ app.post('/api/auth/cadastro', async (req, res) => {
         const isAdmin = tipoSolicitado === 'admin' || nome.toLowerCase().includes('admin') || email.includes('admin');
         const emailFinal = email || `${nome.toLowerCase().replace(/\s+/g, '')}@escola.com`;
 
-        // CADASTRO DE ADMINISTRADOR
         if (isAdmin) {
             return res.json({
                 success: true,
@@ -137,7 +135,6 @@ app.post('/api/auth/cadastro', async (req, res) => {
             });
         }
 
-        // CADASTRO DE PROFESSOR
         let usuarioCriado = null;
         try {
             const { data, error } = await supabase
@@ -176,6 +173,50 @@ app.post('/api/auth/cadastro', async (req, res) => {
 
     } catch (err) {
         return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ----------------------------------------------------
+// FICHAS E VÍNCULOS DO PROFESSOR (ROTA ADICIONADA)
+// ----------------------------------------------------
+app.get('/api/professor/fichas/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const [vinculosRes, profsRes, turmasRes, matsRes] = await Promise.all([
+            supabase.from('vinculos').select('*'),
+            supabase.from('professores').select('*'),
+            supabase.from('turmas').select('*'),
+            supabase.from('materias').select('*')
+        ]);
+
+        const vinculos = vinculosRes.data || [];
+        const profs = profsRes.data || [];
+        const turmas = turmasRes.data || [];
+        const mats = matsRes.data || [];
+
+        const profMap = Object.fromEntries(profs.map(p => [p.id, p]));
+        const turmaMap = Object.fromEntries(turmas.map(t => [t.id, t]));
+        const matMap = Object.fromEntries(mats.map(m => [m.id, m]));
+
+        // Se for admin, retorna todas as fichas; caso contrário, filtra pelo ID do professor
+        const filtrados = (id === 'admin' || id.includes('admin')) 
+            ? vinculos 
+            : vinculos.filter(v => String(v.professor_id) === String(id));
+
+        const fichas = filtrados.map(v => ({
+            id: v.id,
+            professor_id: v.professor_id,
+            turma_id: v.turma_id,
+            materia_id: v.materia_id,
+            professores: profMap[v.professor_id] || null,
+            turmas: turmaMap[v.turma_id] || { nome: 'Turma Geral' },
+            materias: matMap[v.materia_id] || { nome: 'Matéria Geral' }
+        }));
+
+        res.json(fichas);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -378,9 +419,9 @@ app.post('/api/respostas', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// INICIALIZAÇÃO
+// ARRANQUE DO SERVIDOR
 // ----------------------------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Servidor a rodar na porta ${PORT}`);
 });
